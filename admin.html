@@ -316,7 +316,7 @@ dialog .row { display: flex; gap: 8px; }
  * Menggantikan api.php: semua logika booking jalan di browser, data disimpan di localStorage
  * (hanya di browser/HP yang dipakai). Versi asli (PHP) ada di folder tennis-booking. */
 (function () {
-  const OPEN = 420, CLOSE = 1200, NIGHT = 1080, STEP = 30, MIN_DUR = 60, MAX_DUR = 300, MAX_DAYS = 60, COURTS = [1, 2];
+  const OPEN = 420, CLOSE = 1200, NIGHT = 1080, STEP = 30, DUR_STEP = 60, MIN_DUR = 60, MAX_DUR = 300, MAX_DAYS = 60, COURTS = [1, 2];
   const POLICY = 'Booking tidak dapat di-refund. Jika hujan / lapangan basah, booking dapat di-reschedule dengan harga yang sama.';
   const BLOCKING = ['pending', 'paid_check', 'confirmed', 'resched_pending'];
   const DEFAULTS = {
@@ -371,6 +371,7 @@ dialog .row { display: flex; gap: 8px; }
     if (!COURTS.includes(court)) return 'Pilih court.';
     if (start % STEP || minutes % STEP) return 'Jam harus kelipatan 30 menit.';
     if (minutes < MIN_DUR) return 'Minimal booking 1 jam.';
+    if (minutes % DUR_STEP) return 'Lama main harus per jam (1 jam, 2 jam, 3 jam, ...).';
     if (minutes > MAX_DUR) return 'Maksimal booking 5 jam.';
     if (start < OPEN || start + minutes > CLOSE) return 'Jam operasional 07:00–20:00.';
     if (checkPast && isPast(date, start)) return 'Jam yang dipilih sudah lewat.';
@@ -418,7 +419,7 @@ dialog .row { display: flex; gap: 8px; }
     switch (action) {
       case 'config':
         return { venue: s.venue, prices: s.prices, today: today(), maxDate: maxDate(), courts: COURTS, holidays: s.holidays,
-          step: STEP, minDuration: MIN_DUR, maxDuration: MAX_DUR, close: CLOSE, policy: POLICY };
+          step: STEP, durationStep: DUR_STEP, minDuration: MIN_DUR, maxDuration: MAX_DUR, close: CLOSE, policy: POLICY };
       case 'day':
         if (!validDate(q.get('date'))) throw new Err('Tanggal tidak valid', 400);
         return dayInfo(q.get('date'), s, bookings());
@@ -484,7 +485,7 @@ dialog .row { display: flex; gap: 8px; }
           return { ...pub(b), wa, proof_url: b.proof ? localStorage.getItem('slt_demo_proof_' + b.code) : null };
         });
         const date = validDate(q.get('date')) ? q.get('date') : today();
-        return { bookings: sorted, day: dayInfo(date, s, list), today: today(), step: STEP, minDuration: MIN_DUR, maxDuration: MAX_DUR, close: CLOSE };
+        return { bookings: sorted, day: dayInfo(date, s, list), today: today(), step: STEP, durationStep: DUR_STEP, minDuration: MIN_DUR, maxDuration: MAX_DUR, close: CLOSE };
       }
       case 'admin_action': {
         const list = bookings(), b = list.find(x => x.code === input.code);
@@ -731,7 +732,7 @@ $('#grid').onclick = e => {
   }
   if (free < data.minDuration) { alert('Slot kosong di sini kurang dari 1 jam. Minimal booking 1 jam.'); return; }
   const f = $('#manualForm'), opts = [];
-  for (let m = data.minDuration; m <= Math.min(free, data.maxDuration); m += data.step) opts.push(m);
+  for (let m = data.minDuration; m <= Math.min(free, data.maxDuration); m += data.durationStep) opts.push(m);
   f.dur.innerHTML = opts.map(m => `<option value="${m}">${durLabel(m)} (${hm(manualSlot.start)}–${hm(manualSlot.start + m)})</option>`).join('');
   f.name.value = ''; f.phone.value = ''; $('#manualErr').textContent = '';
   $('#manualInfo').textContent = `${data.day.label} · Court ${manualSlot.court} · mulai ${hm(manualSlot.start)}`;
