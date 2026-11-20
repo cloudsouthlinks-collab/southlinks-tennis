@@ -101,6 +101,12 @@ form input, form textarea, form select { display: block; width: 100%; margin-top
 .badge.cancelled { background: #fbe2df; color: var(--red); }
 footer { text-align: center; padding: 10px 16px 30px; }
 [hidden] { display: none !important; }
+.mode button { padding: 11px 6px; font-size: 14px; }
+.upload { display: flex; flex-direction: column; align-items: center; gap: 10px; border: 2px dashed #b9cbbf; border-radius: 12px; padding: 18px 12px; margin: 4px 0 12px; cursor: pointer; text-align: center; background: #f8fbf9; font-weight: 600; color: var(--green); }
+.upload:hover { border-color: var(--green2); }
+.upload img { max-width: 100%; max-height: 260px; border-radius: 8px; }
+.badge.paid_check { background: #dbeafe; color: #1d4ed8; }
+
 .demo-banner { background: #fff3cd; color: #7a5200; text-align: center; font-size: 13px; font-weight: 600; padding: 6px 12px; }
 
 .wrap.wide { max-width: 1100px; }
@@ -187,6 +193,13 @@ dialog .row { display: flex; gap: 8px; }
 .g-cell.cont { border-top-left-radius: 0; border-top-right-radius: 0; margin-top: -4px; }
 .g-cell.resched_pending { background: #e3edfb; color: #2b6cb0; }
 .o-actions .muted.small { align-self: center; }
+.order.paid_check { background: #f3f8ff; border-radius: 10px; padding-left: 10px; padding-right: 10px; }
+.paid-note { color: #1d4ed8; font-weight: 600; margin: 2px 0; }
+.proof-thumb { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); cursor: zoom-in; vertical-align: middle; }
+.g-cell.paid_check { background: #dbeafe; color: #1d4ed8; }
+.stat.paid { border-left-color: #1d4ed8; }
+#proofDialog { width: min(560px, 94vw); text-align: center; }
+#proofDialog img { max-width: 100%; max-height: 75vh; border-radius: 8px; }
 
 </style>
 
@@ -214,6 +227,7 @@ dialog .row { display: flex; gap: 8px; }
       <div class="toolbar">
         <div class="chips" id="filter">
           <button data-f="action" class="active">Perlu tindakan</button>
+          <button data-f="paid_check">💸 Sudah transfer</button>
           <button data-f="confirmed">Lunas</button>
           <button data-f="resched">Reschedule</button>
           <button data-f="upcoming">Akan datang</button>
@@ -223,7 +237,7 @@ dialog .row { display: flex; gap: 8px; }
         <input type="search" id="search" placeholder="Cari nama / no HP / kode">
       </div>
       <div class="flow muted small">
-        <b>Booking:</b> pesan tamu masuk ke WA → <b>① Kirim No. Rek</b> → tamu kirim bukti transfer → <b>② OK, Lunas</b> (WA konfirmasi terbuka, tinggal kirim). Tidak ada refund.<br>
+        <b>Booking:</b> pesan tamu masuk ke WA → <b>① Kirim No. Rek</b> (berisi link konfirmasi) → tamu transfer &amp; tekan <b>Saya sudah transfer</b> + upload bukti → muncul tanda biru <b>💸 Sudah transfer</b> di sini → cek bukti → <b>✅ OK, Lunas</b> (WA konfirmasi terbuka, tinggal kirim). Tidak ada refund.<br>
         <b>Hujan / lapangan basah:</b> di booking Lunas tekan <b>🌧 Reschedule</b> → WA berisi link reschedule terbuka → tamu pilih jadwal baru &amp; kirim pesan reschedule → <b>OK, Reschedule</b>. Harga sama.
       </div>
       <div id="orders"></div>
@@ -275,6 +289,14 @@ dialog .row { display: flex; gap: 8px; }
   </section>
 </main>
 
+<!-- modal bukti transfer -->
+<dialog id="proofDialog">
+  <h2>Bukti transfer</h2>
+  <p class="muted" id="proofInfo"></p>
+  <img id="proofImg" alt="bukti transfer">
+  <div class="row" style="margin-top:12px"><button class="btn ghost" id="proofClose">Tutup</button><button class="btn primary" id="proofOk">✅ OK, Lunas</button></div>
+</dialog>
+
 <!-- modal booking manual -->
 <dialog id="manual">
   <form method="dialog" id="manualForm">
@@ -296,7 +318,7 @@ dialog .row { display: flex; gap: 8px; }
 (function () {
   const OPEN = 420, CLOSE = 1200, NIGHT = 1080, STEP = 30, MIN_DUR = 60, MAX_DUR = 300, MAX_DAYS = 60, COURTS = [1, 2];
   const POLICY = 'Booking tidak dapat di-refund. Jika hujan / lapangan basah, booking dapat di-reschedule dengan harga yang sama.';
-  const BLOCKING = ['pending', 'confirmed', 'resched_pending'];
+  const BLOCKING = ['pending', 'paid_check', 'confirmed', 'resched_pending'];
   const DEFAULTS = {
     venue: 'SouthLinks Tennis Court', admin_wa: '6281267233476',
     bank: 'Bank: (isi nama bank)\nNo. Rek: (isi nomor rekening)\na.n. (isi nama pemilik)',
@@ -370,10 +392,11 @@ dialog .row { display: flex; gap: 8px; }
   const waLink = (phone, text) => 'https://wa.me/' + normPhone(phone) + '?text=' + encodeURIComponent(text);
 
   function messages(b, s, old) {
-    const v = s.venue, d = detail(b), tot = '\nTotal: ' + rupiah(b.total);
+    const v = s.venue, d = detail(b), tot = '\nTotal: ' + rupiah(b.total), payLink = `${siteUrl()}?bayar=${encodeURIComponent(b.code)}`;
     const m = {
       to_admin: `Halo Admin ${v}, saya mau booking lapangan tennis:\n\n${d}${tot}\n\nMohon info nomor rekening untuk transfer. Terima kasih.`,
-      payment: `Halo ${b.name}, terima kasih sudah booking di ${v}.\n\n${d}${tot}\n\nSilakan transfer ke:\n${s.bank}\n\nSetelah transfer, mohon kirim bukti transfer di chat ini ya.\n\nCatatan: ${POLICY}`,
+      payment: `Halo ${b.name}, terima kasih sudah booking di ${v}.\n\n${d}${tot}\n\nSilakan transfer ke:\n${s.bank}\n\nSetelah transfer, tekan link ini lalu upload foto bukti transfer:\n${payLink}\n(atau kirim bukti transfer di chat ini)\n\nCatatan: ${POLICY}`,
+      to_admin_paid: `Halo Admin ${v}, saya SUDAH TRANSFER untuk booking:\n\n${d}${tot}\n\n${b.proof ? 'Foto bukti transfer sudah saya upload di website.' : 'Bukti transfer saya kirim di chat ini.'} Mohon dicek. Terima kasih.`,
       confirmed: `Halo ${b.name}, pembayaran Anda sudah kami terima ✅\n\nBOOKING TERKONFIRMASI\n${d}${tot}\n\nCatatan: ${POLICY}\n\nSampai jumpa di lapangan! — ${v}`,
       cancelled: `Halo ${b.name}, mohon maaf booking Anda di ${v} (kode ${b.code}, ${dateLabel(b.date)}, Court ${b.court}, ${timeLabel(b)}) kami batalkan.`,
       rain: `Halo ${b.name}, karena hujan / lapangan basah, booking Anda di ${v}:\n\n${d}\n\ndapat di-RESCHEDULE dengan harga yang sama (tidak ada biaya tambahan).\n\nSilakan pilih jadwal baru di link ini:\n${siteUrl()}?reschedule=${encodeURIComponent(b.code)}\n\n(kode booking: ${b.code})`,
@@ -411,6 +434,26 @@ dialog .row { display: flex; gap: 8px; }
         list.push(b); saveB(list);
         return { ok: true, booking: pub(b), wa: waLink(s.admin_wa, messages(b, s).to_admin) };
       }
+      case 'pay_lookup': {
+        const list = bookings(), b = list.find(x => x.code === String(q.get('code') || '').trim().toUpperCase());
+        if (!b || b.phone !== normPhone(q.get('phone'))) throw new Err('Kode booking / nomor HP tidak cocok.', 404);
+        if (b.status === 'confirmed') throw new Err('Booking ini sudah LUNAS ✅ — tidak perlu konfirmasi lagi.', 409);
+        if (!['pending', 'paid_check'].includes(b.status)) throw new Err('Booking ini tidak menunggu pembayaran. Hubungi admin via WhatsApp.', 409);
+        return { ok: true, booking: { ...pub(b), has_proof: !!b.proof } };
+      }
+      case 'pay_notify': {
+        const list = bookings(), b = list.find(x => x.code === String(input.code || '').trim().toUpperCase());
+        if (!b || b.phone !== normPhone(input.phone)) throw new Err('Kode booking / nomor HP tidak cocok.', 409);
+        if (!['pending', 'paid_check'].includes(b.status)) throw new Err('Booking ini tidak menunggu pembayaran.', 409);
+        if (input.proof) {
+          if (!/^data:image\/(jpeg|png|webp);base64,/.test(input.proof)) throw new Err('Format foto tidak didukung (pakai JPG/PNG).', 400);
+          try { localStorage.setItem('slt_demo_proof_' + b.code, input.proof); } catch (e) { throw new Err('Memori browser penuh — klik Reset demo di admin.', 400); }
+          b.proof = true;
+        }
+        Object.assign(b, { status: 'paid_check', paid_at: nowIso(), updated_at: nowIso() });
+        saveB(list);
+        return { ok: true, booking: { ...pub(b), has_proof: !!b.proof }, wa: waLink(s.admin_wa, messages(b, s).to_admin_paid) };
+      }
       case 'resched_lookup': {
         const list = bookings(), b = list.find(x => x.code === String(q.get('code') || '').trim().toUpperCase());
         if (!b || b.phone !== normPhone(q.get('phone'))) throw new Err('Kode booking / nomor HP tidak cocok.', 404);
@@ -438,7 +481,7 @@ dialog .row { display: flex; gap: 8px; }
         const sorted = list.slice().sort((a, b) => (b.date + b.created_at).localeCompare(a.date + a.created_at)).map(b => {
           const m = messages(b, s, b.reschedule_of ? byCode[b.reschedule_of] : null), wa = { chat: 'https://wa.me/' + b.phone };
           ['payment', 'confirmed', 'rain', 'resched_ok'].forEach(k => { if (m[k] && b.phone) wa[k] = waLink(b.phone, m[k]); });
-          return { ...pub(b), wa };
+          return { ...pub(b), wa, proof_url: b.proof ? localStorage.getItem('slt_demo_proof_' + b.code) : null };
         });
         const date = validDate(q.get('date')) ? q.get('date') : today();
         return { bookings: sorted, day: dayInfo(date, s, list), today: today(), step: STEP, minDuration: MIN_DUR, maxDuration: MAX_DUR, close: CLOSE };
@@ -450,8 +493,8 @@ dialog .row { display: flex; gap: 8px; }
         const need = st => [].concat(st).includes(b.status);
         let key = null;
         switch (input.op) {
-          case 'confirm': if (!need('pending')) throw new Err('Status booking sudah berubah.', 409); b.status = 'confirmed'; key = 'confirmed'; break;
-          case 'cancel': if (!need(['pending', 'confirmed'])) throw new Err('Booking ini tidak bisa dibatalkan.', 409); b.status = 'cancelled'; key = 'cancelled'; break;
+          case 'confirm': if (!need(['pending', 'paid_check'])) throw new Err('Status booking sudah berubah.', 409); b.status = 'confirmed'; key = 'confirmed'; break;
+          case 'cancel': if (!need(['pending', 'paid_check', 'confirmed'])) throw new Err('Booking ini tidak bisa dibatalkan.', 409); b.status = 'cancelled'; key = 'cancelled'; break;
           case 'reactivate':
             if (!need('cancelled')) throw new Err('Booking tidak dalam status batal.', 409);
             if (slotError(b.date, b.court, b.start, b.minutes, list, false)) throw new Err('Slot sudah terisi booking lain.', 409);
@@ -513,11 +556,12 @@ const rp = n => 'Rp ' + Number(n).toLocaleString('id-ID');
 const hm = m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
 const durLabel = m => ((Math.floor(m / 60) ? Math.floor(m / 60) + ' jam' : '') + (m % 60 ? ' ' + (m % 60) + ' menit' : '')).trim();
 const STATUS = {
-  pending: 'Menunggu bayar', confirmed: 'Lunas', cancelled: 'Batal',
+  pending: 'Menunggu bayar', paid_check: '💸 Sudah transfer · cek bukti', confirmed: 'Lunas', cancelled: 'Batal',
   reschedule: 'Reschedule · tunggu jadwal baru', resched_pending: 'Reschedule · perlu OK', rescheduled: 'Sudah dipindah',
 };
-const BLOCKING = ['pending', 'confirmed', 'resched_pending'];
-let data = { bookings: [] }, filter = 'action', schedDate = null, lastAction = null;
+const BLOCKING = ['pending', 'paid_check', 'confirmed', 'resched_pending'];
+const NEEDS_ACTION = ['pending', 'paid_check', 'resched_pending'];
+let data = { bookings: [] }, filter = 'action', schedDate = null, lastAction = null, lastPaid = null;
 
 async function api(action, body, query = '') {
   const opt = body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, csrf: CSRF, ...body }) } : {};
@@ -531,9 +575,10 @@ async function api(action, body, query = '') {
 async function load() {
   data = await api('admin_list', null, '&date=' + (schedDate || ''));
   if (!schedDate) { schedDate = data.today; $('#schedDate').value = schedDate; }
-  const need = data.bookings.filter(b => b.status === 'pending' || b.status === 'resched_pending').length;
-  if (lastAction !== null && need > lastAction) beep();
-  lastAction = need;
+  const need = data.bookings.filter(b => NEEDS_ACTION.includes(b.status)).length;
+  const paidNow = data.bookings.filter(b => b.status === 'paid_check').length;
+  if (lastAction !== null && (need > lastAction || paidNow > lastPaid)) beep();
+  lastAction = need; lastPaid = paidNow;
   document.title = (need ? `(${need}) ` : '') + 'Admin — SouthLinks Tennis';
   $('#navPending').textContent = need || '';
   renderStats(); renderOrders(); renderGrid();
@@ -546,9 +591,11 @@ function renderStats() {
   // pendapatan: booking lunas (+ yang sedang reschedule, karena uangnya sudah masuk) — booking lama yang sudah dipindah tidak dihitung dua kali
   const revenue = data.bookings.filter(b => ['confirmed', 'reschedule', 'resched_pending'].includes(b.status) && b.date.startsWith(month)).reduce((n, b) => n + b.total, 0);
   const pending = data.bookings.filter(b => b.status === 'pending');
+  const paid = data.bookings.filter(b => b.status === 'paid_check');
   const resched = data.bookings.filter(b => b.status === 'reschedule' || b.status === 'resched_pending');
   $('#stats').innerHTML = `
-    <div class="stat warn"><span>Menunggu pembayaran</span><b>${pending.length}</b><small>${rp(pending.reduce((n, b) => n + b.total, 0))}</small></div>
+    <div class="stat paid"><span>💸 Sudah transfer · perlu dicek</span><b>${paid.length}</b><small>${rp(paid.reduce((n, b) => n + b.total, 0))}</small></div>
+    <div class="stat warn"><span>Belum transfer</span><b>${pending.length}</b><small>${rp(pending.reduce((n, b) => n + b.total, 0))}</small></div>
     <div class="stat blue"><span>Reschedule (hujan)</span><b>${resched.length}</b><small>${resched.filter(b => b.status === 'resched_pending').length} perlu OK admin</small></div>
     <div class="stat"><span>Booking hari ini</span><b>${todays.length}</b><small>${durLabel(minsToday) || '0 jam'} dari 26 jam terpakai</small></div>
     <div class="stat"><span>Pendapatan bulan ini (lunas)</span><b>${rp(revenue)}</b><small>berdasarkan tanggal main</small></div>`;
@@ -556,7 +603,8 @@ function renderStats() {
 
 function matches(b) {
   switch (filter) {
-    case 'action': return b.status === 'pending' || b.status === 'resched_pending';
+    case 'action': return NEEDS_ACTION.includes(b.status);
+    case 'paid_check': return b.status === 'paid_check';
     case 'resched': return ['reschedule', 'resched_pending', 'rescheduled'].includes(b.status) || !!b.reschedule_of;
     case 'upcoming': return BLOCKING.includes(b.status) && b.date >= data.today;
     case 'all': return true;
@@ -569,6 +617,8 @@ function actions(b) {
   const btn = (op, label, cls = 'ghost') => `<button class="btn ${cls} sm" data-op="${op}" data-code="${b.code}">${label}</button>`;
   switch (b.status) {
     case 'pending': return wa('payment', '① Kirim No. Rek', 'wa') + btn('confirm', '② OK, Lunas', 'primary') + btn('cancel', 'Batalkan', 'ghost danger');
+    case 'paid_check': return (b.proof_url ? `<button class="btn ghost sm" data-proof="${b.code}">🧾 Lihat bukti</button>` : '')
+      + btn('confirm', '✅ OK, Lunas', 'primary') + wa('payment', 'Kirim ulang No. Rek') + btn('cancel', 'Batalkan', 'ghost danger');
     case 'confirmed': return wa('confirmed', 'Kirim ulang konfirmasi') + btn('rain', '🌧 Reschedule (hujan)', 'blue') + btn('cancel', 'Batalkan', 'ghost danger');
     case 'reschedule': return `<span class="muted small">Menunggu tamu memilih jadwal baru.</span>` + wa('rain', 'Kirim ulang link reschedule', 'wa');
     case 'resched_pending': return btn('resched_ok', '✓ OK, Reschedule', 'primary') + btn('resched_reject', 'Tolak (minta pilih lagi)', 'ghost danger');
@@ -582,6 +632,7 @@ function renderOrders() {
   const q = $('#search').value.trim().toLowerCase();
   let list = data.bookings.filter(matches);
   if (['action', 'upcoming', 'resched'].includes(filter)) list = list.slice().sort((a, b) => (a.date + hm(a.start)).localeCompare(b.date + hm(b.start)));
+  if (filter === 'action') list.sort((a, b) => (b.status === 'paid_check') - (a.status === 'paid_check'));
   if (q) list = list.filter(b => [b.name, b.phone, '0' + b.phone.slice(2), b.code, b.reschedule_of].join(' ').toLowerCase().includes(q));
   if (!list.length) { $('#orders').innerHTML = '<p class="empty muted">Tidak ada pesanan.</p>'; return; }
   $('#orders').innerHTML = list.map(b => `
@@ -589,13 +640,21 @@ function renderOrders() {
       <div class="o-main">
         <div class="o-top"><b>${esc(b.name)}</b> <span class="badge ${b.status}">${STATUS[b.status] || b.status}</span> <code>${b.code}</code>${b.source === 'admin' ? ' <span class="muted small">· manual</span>' : ''}</div>
         <div class="o-when">${b.date_label} · <b>Court ${b.court}</b> · ${b.time_label} <span class="muted">(${b.duration_label})</span></div>
+        ${b.status === 'paid_check' ? `<div class="small paid-note">💸 Tamu sudah konfirmasi transfer${b.paid_at ? ' · ' + new Date(b.paid_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : ''}${b.proof_url ? '' : ' · bukti dikirim lewat WhatsApp'}</div>` : ''}
         ${b.reschedule_of ? `<div class="small resched-note">🌧 Reschedule dari <code>${esc(b.reschedule_of)}</code> — sudah dibayar</div>` : ''}
         <div class="muted small">${b.phone ? `<a href="${b.wa.chat}" target="_blank" rel="noopener">0${esc(b.phone.slice(2))}</a> · ` : ''}dipesan ${new Date(b.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}</div>
       </div>
-      <div class="o-total">${rp(b.total)}</div>
+      <div class="o-total">${rp(b.total)}${b.proof_url ? `<br><img class="proof-thumb" src="${b.proof_url}" data-proof="${b.code}" alt="bukti transfer">` : ''}</div>
       <div class="o-actions">${actions(b)}</div>
     </article>`).join('');
 }
+
+$('#proofOk').onclick = () => {
+  const code = $('#proofDialog').dataset.code;
+  $('#proofDialog').close();
+  document.querySelector(`button[data-op="confirm"][data-code="${code}"]`)?.click();
+};
+$('#proofClose').onclick = () => $('#proofDialog').close();
 
 const CONFIRM = {
   confirm: b => `Bukti transfer ${b.name} (${rp(b.total)}) sudah diterima?\n\nBooking ditandai LUNAS dan WhatsApp konfirmasi ke tamu akan dibuka.`,
@@ -606,6 +665,15 @@ const CONFIRM = {
 };
 
 $('#orders').onclick = async e => {
+  const pv = e.target.closest('[data-proof]');
+  if (pv) {
+    const b = data.bookings.find(x => x.code === pv.dataset.proof);
+    $('#proofImg').src = b.proof_url;
+    $('#proofInfo').textContent = `${b.name} · ${b.code} · ${rp(b.total)}`;
+    $('#proofDialog').dataset.code = b.code;
+    $('#proofDialog').showModal();
+    return;
+  }
   const btn = e.target.closest('button[data-op]');
   if (!btn) return;
   const op = btn.dataset.op, b = data.bookings.find(x => x.code === btn.dataset.code);

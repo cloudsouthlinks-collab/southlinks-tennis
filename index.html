@@ -100,6 +100,12 @@ form input, form textarea, form select { display: block; width: 100%; margin-top
 .badge.cancelled { background: #fbe2df; color: var(--red); }
 footer { text-align: center; padding: 10px 16px 30px; }
 [hidden] { display: none !important; }
+.mode button { padding: 11px 6px; font-size: 14px; }
+.upload { display: flex; flex-direction: column; align-items: center; gap: 10px; border: 2px dashed #b9cbbf; border-radius: 12px; padding: 18px 12px; margin: 4px 0 12px; cursor: pointer; text-align: center; background: #f8fbf9; font-weight: 600; color: var(--green); }
+.upload:hover { border-color: var(--green2); }
+.upload img { max-width: 100%; max-height: 260px; border-radius: 8px; }
+.badge.paid_check { background: #dbeafe; color: #1d4ed8; }
+
 .demo-banner { background: #fff3cd; color: #7a5200; text-align: center; font-size: 13px; font-weight: 600; padding: 6px 12px; }
 
 </style>
@@ -133,8 +139,32 @@ footer { text-align: center; padding: 10px 16px 30px; }
 
   <div class="mode" id="modeTabs">
     <button data-mode="book" class="active">Booking baru</button>
-    <button data-mode="resched">🌧 Reschedule (hujan)</button>
+    <button data-mode="paid">💸 Sudah transfer</button>
+    <button data-mode="resched">🌧 Reschedule</button>
   </div>
+
+  <!-- SUDAH TRANSFER: konfirmasi pembayaran + upload bukti -->
+  <section class="card" id="step-paid" hidden>
+    <h2>Konfirmasi sudah transfer</h2>
+    <p class="muted small">Sudah transfer ke rekening yang dikirim admin? Masukkan kode booking &amp; no. HP, upload foto bukti transfer, lalu tekan tombol <b>Saya sudah transfer</b>.</p>
+    <form id="payLookup" class="inline-form">
+      <label>Kode booking<input name="code" required placeholder="SLT-xxxxxx-xxxx" autocapitalize="characters"></label>
+      <label>No. HP / WhatsApp<input name="phone" required inputmode="tel" placeholder="0812xxxxxxxx"></label>
+      <button class="btn primary">Cek booking</button>
+    </form>
+    <p class="error" id="payError"></p>
+    <div id="payBox" hidden>
+      <div class="summary" id="paySummary"></div>
+      <label class="upload" id="uploadLabel">
+        <input type="file" id="proofInput" accept="image/*" hidden>
+        <span id="uploadText">📷 Upload foto / screenshot bukti transfer</span>
+        <img id="proofPreview" alt="" hidden>
+      </label>
+      <button class="btn primary" id="payBtn">✅ Saya sudah transfer</button>
+      <p class="error" id="payBtnError"></p>
+      <p class="muted small">Setelah ditekan, admin langsung melihat tanda <b>"Sudah transfer"</b> di dashboard dan WhatsApp terbuka untuk memberi tahu admin. Admin akan mengirim konfirmasi setelah dicek.</p>
+    </div>
+  </section>
 
   <!-- RESCHEDULE: cek booking lama -->
   <section class="card" id="step-resched" hidden>
@@ -181,7 +211,7 @@ footer { text-align: center; padding: 10px 16px 30px; }
       </div>
       <button type="submit" class="btn primary" id="bookBtn" disabled>Booking &amp; kirim ke WhatsApp Admin</button>
       <p class="error" id="formError"></p>
-      <p class="muted small" id="flowNote">Setelah booking, WhatsApp terbuka dengan pesan ke admin. Admin membalas dengan nomor rekening. Kirim bukti transfer ke admin, lalu Anda menerima konfirmasi booking.</p>
+      <p class="muted small" id="flowNote">Setelah booking, WhatsApp terbuka dengan pesan ke admin. Admin membalas dengan nomor rekening. Setelah transfer, buka menu <b>💸 Sudah transfer</b> dan upload bukti, lalu Anda menerima konfirmasi booking.</p>
     </form>
   </section>
 
@@ -192,6 +222,7 @@ footer { text-align: center; padding: 10px 16px 30px; }
     <div class="summary" id="doneSummary"></div>
     <p>Status: <span class="badge pending" id="doneStatus">Menunggu pembayaran</span></p>
     <a class="btn wa" id="doneWa" target="_blank" rel="noopener">Kirim pesan ke WhatsApp Admin</a>
+    <button class="btn primary" id="donePaid" hidden>💸 Saya sudah transfer — upload bukti</button>
     <p class="muted small" id="doneNote">Kalau WhatsApp belum terbuka, tekan tombol hijau di atas. Admin akan membalas dengan nomor rekening.</p>
     <button class="btn ghost" onclick="location.href=location.pathname">Kembali</button>
   </section>
@@ -207,7 +238,7 @@ footer { text-align: center; padding: 10px 16px 30px; }
 (function () {
   const OPEN = 420, CLOSE = 1200, NIGHT = 1080, STEP = 30, MIN_DUR = 60, MAX_DUR = 300, MAX_DAYS = 60, COURTS = [1, 2];
   const POLICY = 'Booking tidak dapat di-refund. Jika hujan / lapangan basah, booking dapat di-reschedule dengan harga yang sama.';
-  const BLOCKING = ['pending', 'confirmed', 'resched_pending'];
+  const BLOCKING = ['pending', 'paid_check', 'confirmed', 'resched_pending'];
   const DEFAULTS = {
     venue: 'SouthLinks Tennis Court', admin_wa: '6281267233476',
     bank: 'Bank: (isi nama bank)\nNo. Rek: (isi nomor rekening)\na.n. (isi nama pemilik)',
@@ -281,10 +312,11 @@ footer { text-align: center; padding: 10px 16px 30px; }
   const waLink = (phone, text) => 'https://wa.me/' + normPhone(phone) + '?text=' + encodeURIComponent(text);
 
   function messages(b, s, old) {
-    const v = s.venue, d = detail(b), tot = '\nTotal: ' + rupiah(b.total);
+    const v = s.venue, d = detail(b), tot = '\nTotal: ' + rupiah(b.total), payLink = `${siteUrl()}?bayar=${encodeURIComponent(b.code)}`;
     const m = {
       to_admin: `Halo Admin ${v}, saya mau booking lapangan tennis:\n\n${d}${tot}\n\nMohon info nomor rekening untuk transfer. Terima kasih.`,
-      payment: `Halo ${b.name}, terima kasih sudah booking di ${v}.\n\n${d}${tot}\n\nSilakan transfer ke:\n${s.bank}\n\nSetelah transfer, mohon kirim bukti transfer di chat ini ya.\n\nCatatan: ${POLICY}`,
+      payment: `Halo ${b.name}, terima kasih sudah booking di ${v}.\n\n${d}${tot}\n\nSilakan transfer ke:\n${s.bank}\n\nSetelah transfer, tekan link ini lalu upload foto bukti transfer:\n${payLink}\n(atau kirim bukti transfer di chat ini)\n\nCatatan: ${POLICY}`,
+      to_admin_paid: `Halo Admin ${v}, saya SUDAH TRANSFER untuk booking:\n\n${d}${tot}\n\n${b.proof ? 'Foto bukti transfer sudah saya upload di website.' : 'Bukti transfer saya kirim di chat ini.'} Mohon dicek. Terima kasih.`,
       confirmed: `Halo ${b.name}, pembayaran Anda sudah kami terima ✅\n\nBOOKING TERKONFIRMASI\n${d}${tot}\n\nCatatan: ${POLICY}\n\nSampai jumpa di lapangan! — ${v}`,
       cancelled: `Halo ${b.name}, mohon maaf booking Anda di ${v} (kode ${b.code}, ${dateLabel(b.date)}, Court ${b.court}, ${timeLabel(b)}) kami batalkan.`,
       rain: `Halo ${b.name}, karena hujan / lapangan basah, booking Anda di ${v}:\n\n${d}\n\ndapat di-RESCHEDULE dengan harga yang sama (tidak ada biaya tambahan).\n\nSilakan pilih jadwal baru di link ini:\n${siteUrl()}?reschedule=${encodeURIComponent(b.code)}\n\n(kode booking: ${b.code})`,
@@ -322,6 +354,26 @@ footer { text-align: center; padding: 10px 16px 30px; }
         list.push(b); saveB(list);
         return { ok: true, booking: pub(b), wa: waLink(s.admin_wa, messages(b, s).to_admin) };
       }
+      case 'pay_lookup': {
+        const list = bookings(), b = list.find(x => x.code === String(q.get('code') || '').trim().toUpperCase());
+        if (!b || b.phone !== normPhone(q.get('phone'))) throw new Err('Kode booking / nomor HP tidak cocok.', 404);
+        if (b.status === 'confirmed') throw new Err('Booking ini sudah LUNAS ✅ — tidak perlu konfirmasi lagi.', 409);
+        if (!['pending', 'paid_check'].includes(b.status)) throw new Err('Booking ini tidak menunggu pembayaran. Hubungi admin via WhatsApp.', 409);
+        return { ok: true, booking: { ...pub(b), has_proof: !!b.proof } };
+      }
+      case 'pay_notify': {
+        const list = bookings(), b = list.find(x => x.code === String(input.code || '').trim().toUpperCase());
+        if (!b || b.phone !== normPhone(input.phone)) throw new Err('Kode booking / nomor HP tidak cocok.', 409);
+        if (!['pending', 'paid_check'].includes(b.status)) throw new Err('Booking ini tidak menunggu pembayaran.', 409);
+        if (input.proof) {
+          if (!/^data:image\/(jpeg|png|webp);base64,/.test(input.proof)) throw new Err('Format foto tidak didukung (pakai JPG/PNG).', 400);
+          try { localStorage.setItem('slt_demo_proof_' + b.code, input.proof); } catch (e) { throw new Err('Memori browser penuh — klik Reset demo di admin.', 400); }
+          b.proof = true;
+        }
+        Object.assign(b, { status: 'paid_check', paid_at: nowIso(), updated_at: nowIso() });
+        saveB(list);
+        return { ok: true, booking: { ...pub(b), has_proof: !!b.proof }, wa: waLink(s.admin_wa, messages(b, s).to_admin_paid) };
+      }
       case 'resched_lookup': {
         const list = bookings(), b = list.find(x => x.code === String(q.get('code') || '').trim().toUpperCase());
         if (!b || b.phone !== normPhone(q.get('phone'))) throw new Err('Kode booking / nomor HP tidak cocok.', 404);
@@ -349,7 +401,7 @@ footer { text-align: center; padding: 10px 16px 30px; }
         const sorted = list.slice().sort((a, b) => (b.date + b.created_at).localeCompare(a.date + a.created_at)).map(b => {
           const m = messages(b, s, b.reschedule_of ? byCode[b.reschedule_of] : null), wa = { chat: 'https://wa.me/' + b.phone };
           ['payment', 'confirmed', 'rain', 'resched_ok'].forEach(k => { if (m[k] && b.phone) wa[k] = waLink(b.phone, m[k]); });
-          return { ...pub(b), wa };
+          return { ...pub(b), wa, proof_url: b.proof ? localStorage.getItem('slt_demo_proof_' + b.code) : null };
         });
         const date = validDate(q.get('date')) ? q.get('date') : today();
         return { bookings: sorted, day: dayInfo(date, s, list), today: today(), step: STEP, minDuration: MIN_DUR, maxDuration: MAX_DUR, close: CLOSE };
@@ -361,8 +413,8 @@ footer { text-align: center; padding: 10px 16px 30px; }
         const need = st => [].concat(st).includes(b.status);
         let key = null;
         switch (input.op) {
-          case 'confirm': if (!need('pending')) throw new Err('Status booking sudah berubah.', 409); b.status = 'confirmed'; key = 'confirmed'; break;
-          case 'cancel': if (!need(['pending', 'confirmed'])) throw new Err('Booking ini tidak bisa dibatalkan.', 409); b.status = 'cancelled'; key = 'cancelled'; break;
+          case 'confirm': if (!need(['pending', 'paid_check'])) throw new Err('Status booking sudah berubah.', 409); b.status = 'confirmed'; key = 'confirmed'; break;
+          case 'cancel': if (!need(['pending', 'paid_check', 'confirmed'])) throw new Err('Booking ini tidak bisa dibatalkan.', 409); b.status = 'cancelled'; key = 'cancelled'; break;
           case 'reactivate':
             if (!need('cancelled')) throw new Err('Booking tidak dalam status batal.', 409);
             if (slotError(b.date, b.court, b.start, b.minutes, list, false)) throw new Err('Slot sudah terisi booking lain.', 409);
@@ -451,17 +503,20 @@ async function init() {
   });
   document.querySelectorAll('#modeTabs button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
   renderDurs();
-  const q = new URLSearchParams(location.search).get('reschedule');
+  const qs = new URLSearchParams(location.search), q = qs.get('reschedule'), qb = qs.get('bayar');
   if (q) { setMode('resched'); $('#reschedForm').code.value = q; $('#reschedForm').phone.focus(); }
+  if (qb) { setMode('paid'); $('#payLookup').code.value = qb; $('#payLookup').phone.focus(); }
   selectDate(cfg.today);
 }
 
 function setMode(mode) {
   state.mode = mode; state.resched = null; state.start = null;
   document.querySelectorAll('#modeTabs button').forEach(x => x.classList.toggle('active', x.dataset.mode === mode));
-  const r = mode === 'resched';
+  const r = mode === 'resched', paid = mode === 'paid';
   $('#step-resched').hidden = !r;
-  $('#step-pick').hidden = $('#step-form').hidden = r; // tampil setelah booking lama dicek
+  $('#step-paid').hidden = !paid;
+  $('#step-done').hidden = true;
+  $('#step-pick').hidden = $('#step-form').hidden = r || paid; // reschedule: tampil setelah booking lama dicek
   $('#reschedOld').hidden = true; $('#reschedError').textContent = '';
   $('#guestFields').hidden = r;
   $('#durs').hidden = r; $('#durFixed').hidden = !r;
@@ -469,7 +524,7 @@ function setMode(mode) {
   $('#bookBtn').textContent = r ? 'Kirim pesan reschedule ke WhatsApp Admin' : 'Booking & kirim ke WhatsApp Admin';
   $('#flowNote').textContent = r
     ? 'Setelah dikirim, WhatsApp terbuka dengan pesan reschedule ke admin. Tidak perlu transfer lagi (harga sama). Admin akan mengirim konfirmasi jadwal baru.'
-    : 'Setelah booking, WhatsApp terbuka dengan pesan ke admin. Admin membalas dengan nomor rekening. Kirim bukti transfer ke admin, lalu Anda menerima konfirmasi booking.';
+    : 'Setelah booking, WhatsApp terbuka dengan pesan ke admin. Admin membalas dengan nomor rekening. Setelah transfer, buka menu <b>💸 Sudah transfer</b> dan upload bukti, lalu Anda menerima konfirmasi booking.';
   if (!r) state.minutes = 60;
   renderDurs(); render();
 }
@@ -586,6 +641,11 @@ $('#bookForm').onsubmit = async e => {
       ? 'Kalau WhatsApp belum terbuka, tekan tombol hijau di atas. Admin akan mengirim konfirmasi jadwal baru.'
       : 'Kalau WhatsApp belum terbuka, tekan tombol hijau di atas. Admin akan membalas dengan nomor rekening. Ingat: booking tidak bisa refund.';
     $('#doneWa').href = j.wa;
+    $('#donePaid').hidden = r;
+    $('#donePaid').onclick = () => {
+      $('#modeTabs').hidden = false; setMode('paid');
+      $('#payLookup').code.value = b.code; $('#payLookup').phone.value = f.phone.value; $('#payLookup').requestSubmit();
+    };
     ['#modeTabs', '#step-pick', '#step-form', '#step-resched'].forEach(s => $(s).hidden = true);
     $('#step-done').hidden = false;
     scrollTo({ top: 0, behavior: 'smooth' });
@@ -595,6 +655,81 @@ $('#bookForm').onsubmit = async e => {
     $('#bookBtn').textContent = label;
     selectDate(state.date);
   }
+};
+
+/* ---------- sudah transfer ---------- */
+let pay = null, proofData = null;
+$('#payLookup').onsubmit = async e => {
+  e.preventDefault();
+  const f = e.target;
+  $('#payError').textContent = ''; $('#payBox').hidden = true;
+  const r = await fetch(`api.php?action=pay_lookup&code=${encodeURIComponent(f.code.value)}&phone=${encodeURIComponent(f.phone.value)}`);
+  const j = await r.json();
+  if (!r.ok) { $('#payError').textContent = j.error; return; }
+  const b = j.booking;
+  pay = { code: b.code, phone: f.phone.value };
+  $('#paySummary').innerHTML = `<div><span>Nama</span><b>${esc(b.name)}</b></div><div><span>Tanggal</span><b>${b.date_label}</b></div>
+    <div><span>Court</span><b>Court ${b.court}</b></div><div><span>Jam</span><b>${b.time_label} (${b.duration_label})</b></div>
+    <div class="total"><span>Total transfer</span><b>${rp(b.total)}</b></div>`
+    + (b.status === 'paid_check' ? `<p class="small" style="margin:8px 0 0;color:var(--green2)">✓ Anda sudah konfirmasi transfer${b.has_proof ? ' + upload bukti' : ''}. Menunggu admin cek. Bisa upload ulang kalau perlu.</p>` : '');
+  $('#payBox').hidden = false;
+};
+
+$('#proofInput').onchange = async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  $('#uploadText').textContent = 'Memproses foto…';
+  try {
+    proofData = await shrinkImage(file);
+    $('#proofPreview').src = proofData; $('#proofPreview').hidden = false;
+    $('#uploadText').textContent = '✓ Foto bukti siap · tap untuk ganti';
+  } catch (ex) { proofData = null; $('#uploadText').textContent = '⚠️ Foto tidak bisa dibaca, coba screenshot (JPG/PNG)'; }
+};
+
+// perkecil foto (maks 1400px, JPEG) supaya cepat di-upload dari HP
+function shrinkImage(file) {
+  return new Promise((ok, fail) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, 1400 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); ok(c.toDataURL('image/jpeg', 0.8));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); fail(new Error('bad image')); };
+    img.src = url;
+  });
+}
+
+$('#payBtn').onclick = async () => {
+  if (!pay) return;
+  $('#payBtnError').textContent = '';
+  if (!proofData && !confirm('Belum upload foto bukti transfer. Lanjut tanpa foto? (kirim bukti lewat WhatsApp ke admin)')) return;
+  $('#payBtn').disabled = true; $('#payBtn').textContent = 'Mengirim…';
+  const waWin = window.open('', '_blank');
+  try {
+    const r = await fetch('api.php', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'pay_notify', code: pay.code, phone: pay.phone, proof: proofData }) });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || 'Gagal');
+    if (waWin) waWin.location = j.wa;
+    const b = j.booking;
+    $('#doneTitle').textContent = 'Konfirmasi transfer terkirim!';
+    $('#doneCode').textContent = b.code;
+    $('#doneSummary').innerHTML = `<div><span>Nama</span><b>${esc(b.name)}</b></div><div><span>Tanggal</span><b>${b.date_label}</b></div>
+      <div><span>Court</span><b>Court ${b.court}</b></div><div><span>Jam</span><b>${b.time_label}</b></div>
+      <div class="total"><span>Total</span><b>${rp(b.total)}</b></div>`;
+    $('#doneStatus').textContent = 'Sudah transfer · menunggu dicek admin';
+    $('#doneWa').href = j.wa; $('#doneWa').textContent = 'Beri tahu admin via WhatsApp';
+    $('#doneNote').textContent = b.has_proof ? 'Foto bukti sudah diterima sistem. Admin akan mengirim konfirmasi booking via WhatsApp.'
+      : 'Jangan lupa lampirkan foto bukti transfer di chat WhatsApp ke admin.';
+    $('#donePaid').hidden = true;
+    ['#modeTabs', '#step-paid', '#step-pick', '#step-form', '#step-resched'].forEach(s => $(s).hidden = true);
+    $('#step-done').hidden = false;
+    scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (ex) { if (waWin) waWin.close(); $('#payBtnError').textContent = ex.message; }
+  $('#payBtn').disabled = false; $('#payBtn').textContent = '✅ Saya sudah transfer';
 };
 
 init();
