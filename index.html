@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Booking — SouthLinks Tennis Court</title>
+<style>
+:root {
+  --green: #0f5132; --green2: #198754; --lime: #c6e33a; --bg: #f3f6f2; --card: #fff;
+  --text: #1c2b22; --muted: #6b7a70; --line: #e2e8e3; --red: #c0392b; --amber: #b7791f;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+.wrap { max-width: 860px; margin: 0 auto; padding: 0 16px; }
+.hero { background: linear-gradient(135deg, var(--green), var(--green2)); color: #fff; padding: 28px 0 56px; }
+.hero h1 { margin: 10px 0 4px; font-size: 28px; }
+.hero p { margin: 0; opacity: .85; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: .3px; }
+.ball { width: 22px; height: 22px; border-radius: 50%; background: var(--lime); box-shadow: inset -4px -2px 0 rgba(0,0,0,.12); }
+main.wrap { margin-top: -36px; }
+.card { background: var(--card); border-radius: 14px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,.05); }
+.card h2 { font-size: 17px; margin: 4px 0 12px; display: flex; align-items: center; gap: 8px; }
+.card h2 + * { margin-top: 0; }
+.num { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--green); color: #fff; font-size: 13px; }
+.muted { color: var(--muted); } .small { font-size: 13px; }
+.prices table { width: 100%; border-collapse: collapse; text-align: center; }
+.prices th, .prices td { padding: 8px; border-bottom: 1px solid var(--line); }
+.prices tbody th { text-align: left; font-weight: 600; }
+.prices td { font-weight: 700; color: var(--green); }
+.prices small { font-weight: 400; color: var(--muted); }
+
+.dates { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; }
+.dates button { flex: 0 0 64px; border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 6px 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; color: var(--text); }
+.dates button b { font-size: 20px; line-height: 1.2; }
+.dates button small { font-size: 11px; color: var(--muted); }
+.dates button.red b { color: var(--red); }
+.dates button.active { background: var(--green); border-color: var(--green); }
+.dates button.active b, .dates button.active small { color: #fff; }
+.other-date { display: inline-block; margin: 10px 0 0; font-size: 14px; color: var(--muted); }
+.other-date input { margin-left: 6px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px; font: inherit; }
+.day-note { margin: 10px 0 18px; }
+
+.tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+.tabs button { flex: 1; padding: 10px; border: 2px solid var(--line); background: #fff; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 15px; }
+.tabs button.active { border-color: var(--green); color: var(--green); background: #eaf5ee; }
+.slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 6px; }
+.slots .span { grid-column: 1 / -1; }
+.slot { border: 1.5px solid var(--line); border-radius: 10px; padding: 8px 6px; align-items: center; background: #fff; text-align: left; cursor: pointer; display: flex; flex-direction: column; font: inherit; color: var(--text); }
+.slot small { color: var(--muted); font-size: 12px; }
+.slot.free:hover { border-color: var(--green2); }
+.slot.sel { background: var(--green); border-color: var(--green); color: #fff; }
+.slot.sel small { color: #d6f0de; }
+.slot.taken { background: #f1f1f1; color: #aaa; cursor: not-allowed; text-decoration: line-through; }
+.slot.taken small { color: #bbb; }
+.slot.short { background: #fafafa; color: #b5bdb8; cursor: not-allowed; }
+.slot.short small { color: #c8cfca; }
+.rules { margin: 14px 0 0; padding-left: 20px; font-size: 14px; }
+.rules li { margin: 3px 0; }
+.mode { display: flex; gap: 8px; margin-bottom: 16px; }
+.mode button { flex: 1; padding: 12px; border-radius: 12px; border: 0; background: #fff; font: inherit; font-weight: 700; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.05); color: var(--muted); }
+.mode button.active { background: var(--green); color: #fff; }
+.durs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+.durs button { border: 1.5px solid var(--line); background: #fff; padding: 7px 12px; border-radius: 99px; font: inherit; font-size: 14px; cursor: pointer; }
+.durs button.active { background: var(--green); border-color: var(--green); color: #fff; font-weight: 700; }
+#durFixed { margin: 0 0 18px; }
+.inline-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; }
+.inline-form .btn { width: auto; margin: 0 0 12px; }
+@media (max-width: 600px) { .inline-form { grid-template-columns: 1fr; } .inline-form .btn { width: 100%; } }
+form label.agree { display: flex; gap: 10px; align-items: flex-start; font-weight: 400; background: #fff8e6; border: 1px solid #f3dfa6; border-radius: 10px; padding: 10px 12px; }
+form label.agree input { width: 18px; height: 18px; margin: 2px 0 0; flex: 0 0 auto; }
+.summary .label { margin: 0 0 4px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--green2); }
+.summary.old { margin-top: 12px; background: #eef4fb; border-color: #d5e3f3; }
+.summary.old .label { color: #2b6cb0; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; margin-top: 12px; font-size: 13px; color: var(--muted); }
+.lg { display: inline-block; width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid var(--line); margin-right: -8px; vertical-align: middle; }
+.lg.sel { background: var(--green); border-color: var(--green); } .lg.taken { background: #e5e5e5; }
+
+.summary { background: #f6faf7; border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; }
+.summary div { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; }
+.summary span { color: var(--muted); }
+.summary .total { border-top: 1px dashed var(--line); margin-top: 4px; padding-top: 8px; font-size: 17px; }
+.summary .total b { color: var(--green); }
+form label { display: block; font-weight: 600; margin-bottom: 12px; font-size: 14px; }
+form input, form textarea, form select { display: block; width: 100%; margin-top: 4px; padding: 11px 12px; border: 1px solid #cfd8d2; border-radius: 10px; font: inherit; font-weight: 400; }
+.btn { display: inline-flex; justify-content: center; align-items: center; gap: 6px; width: 100%; padding: 13px 16px; border-radius: 10px; border: 0; font: inherit; font-weight: 700; cursor: pointer; text-decoration: none; margin-top: 6px; }
+.btn.primary { background: var(--green); color: #fff; }
+.btn.primary:disabled { background: #a9b8ae; cursor: not-allowed; }
+.btn.wa { background: #25d366; color: #fff; }
+.btn.ghost { background: transparent; color: var(--green); border: 1.5px solid var(--green); }
+.error { color: var(--red); font-weight: 600; min-height: 1em; margin: 8px 0 0; }
+.success { text-align: center; }
+.success .summary { text-align: left; }
+.check { width: 56px; height: 56px; margin: 4px auto 8px; border-radius: 50%; background: var(--green2); color: #fff; display: grid; place-items: center; font-size: 30px; }
+.success h2 { justify-content: center; }
+.badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 12px; font-weight: 700; }
+.badge.pending { background: #fff4d6; color: var(--amber); }
+.badge.confirmed { background: #dcf3e4; color: var(--green2); }
+.badge.reschedule, .badge.resched_pending { background: #e3edfb; color: #2b6cb0; }
+.badge.rescheduled { background: #eee; color: #777; }
+.badge.cancelled { background: #fbe2df; color: var(--red); }
+footer { text-align: center; padding: 10px 16px 30px; }
+[hidden] { display: none !important; }
+.demo-banner { background: #fff3cd; color: #7a5200; text-align: center; font-size: 13px; font-weight: 600; padding: 6px 12px; }
+
+</style>
+</head>
+<body>
+<div class="demo-banner">VERSI DEMO — data booking hanya tersimpan di browser ini (belum online). Tombol WhatsApp tetap berfungsi.</div>
+<header class="hero">
+  <div class="wrap">
+    <div class="brand"><span class="ball"></span>SouthLinks Tennis Court</div>
+    <h1>Booking Lapangan Tennis</h1>
+    <p>2 court · buka setiap hari 07:00 – 20:00</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card prices">
+    <h2>Harga sewa per jam</h2>
+    <table>
+      <thead><tr><th></th><th>Day<br><small>07:00–18:00</small></th><th>Night<br><small>18:00–20:00</small></th></tr></thead>
+      <tbody>
+        <tr><th>Senin – Jumat</th><td>Rp 150.000</td><td>Rp 200.000</td></tr>
+        <tr><th>Sabtu, Minggu &amp; tanggal merah</th><td>Rp 200.000</td><td>Rp 250.000</td></tr>
+      </tbody>
+    </table>
+    <ul class="rules">
+      <li>Minimal booking <b>1 jam</b>. Jam mulai bisa per 30 menit (contoh 07:30–08:30).</li>
+      <li><b>Tidak bisa refund.</b></li>
+      <li>Kalau hujan / lapangan basah, booking bisa <b>di-reschedule</b> dengan harga yang sama.</li>
+    </ul>
+  </section>
+
+  <div class="mode" id="modeTabs">
+    <button data-mode="book" class="active">Booking baru</button>
+    <button data-mode="resched">🌧 Reschedule (hujan)</button>
+  </div>
+
+  <!-- RESCHEDULE: cek booking lama -->
+  <section class="card" id="step-resched" hidden>
+    <h2>Reschedule booking</h2>
+    <p class="muted small">Untuk booking yang terkena hujan / lapangan basah. Admin akan mengirim link &amp; kode booking lewat WhatsApp. Harga sama, tidak ada biaya tambahan.</p>
+    <form id="reschedForm" class="inline-form">
+      <label>Kode booking<input name="code" required placeholder="SLT-xxxxxx-xxxx" autocapitalize="characters"></label>
+      <label>No. HP / WhatsApp<input name="phone" required inputmode="tel" placeholder="0812xxxxxxxx"></label>
+      <button class="btn primary">Cek booking</button>
+    </form>
+    <p class="error" id="reschedError"></p>
+    <div class="summary old" id="reschedOld" hidden></div>
+  </section>
+
+  <section class="card" id="step-pick">
+    <h2><span class="num">1</span> Pilih tanggal</h2>
+    <div class="dates" id="dates"></div>
+    <label class="other-date">Tanggal lain: <input type="date" id="dateInput"></label>
+    <p class="day-note" id="dayNote"></p>
+
+    <h2><span class="num">2</span> Pilih court</h2>
+    <div class="tabs" id="courtTabs">
+      <button data-court="1" class="active">Court 1</button>
+      <button data-court="2">Court 2</button>
+    </div>
+
+    <h2><span class="num">3</span> Lama main</h2>
+    <div class="durs" id="durs"></div>
+    <p class="muted small" id="durFixed" hidden></p>
+
+    <h2><span class="num">4</span> Pilih jam mulai</h2>
+    <div class="slots" id="slots"><p class="muted">Memuat jadwal…</p></div>
+    <div class="legend"><span class="lg free"></span>Tersedia <span class="lg sel"></span>Dipilih <span class="lg taken"></span>Sudah dibooking / tidak cukup waktu</div>
+  </section>
+
+  <section class="card" id="step-form">
+    <h2><span class="num">5</span> <span id="formTitle">Data pemesan</span></h2>
+    <div class="summary" id="summary"><p class="muted">Belum ada jam yang dipilih.</p></div>
+    <form id="bookForm" autocomplete="on">
+      <div id="guestFields">
+        <label>Nama lengkap<input name="name" minlength="2" maxlength="60" placeholder="Nama Anda"></label>
+        <label>No. HP / WhatsApp<input name="phone" inputmode="tel" placeholder="0812xxxxxxxx"></label>
+        <label class="agree"><input type="checkbox" name="agree"> Saya setuju: booking <b>tidak bisa refund</b>. Jika hujan / lapangan basah, booking bisa di-reschedule dengan harga yang sama.</label>
+      </div>
+      <button type="submit" class="btn primary" id="bookBtn" disabled>Booking &amp; kirim ke WhatsApp Admin</button>
+      <p class="error" id="formError"></p>
+      <p class="muted small" id="flowNote">Setelah booking, WhatsApp terbuka dengan pesan ke admin. Admin membalas dengan nomor rekening. Kirim bukti transfer ke admin, lalu Anda menerima konfirmasi booking.</p>
+    </form>
+  </section>
+
+  <section class="card success" id="step-done" hidden>
+    <div class="check">✓</div>
+    <h2 id="doneTitle">Booking diterima!</h2>
+    <p>Kode booking: <b id="doneCode"></b></p>
+    <div class="summary" id="doneSummary"></div>
+    <p>Status: <span class="badge pending" id="doneStatus">Menunggu pembayaran</span></p>
+    <a class="btn wa" id="doneWa" target="_blank" rel="noopener">Kirim pesan ke WhatsApp Admin</a>
+    <p class="muted small" id="doneNote">Kalau WhatsApp belum terbuka, tekan tombol hijau di atas. Admin akan membalas dengan nomor rekening.</p>
+    <button class="btn ghost" onclick="location.href=location.pathname">Kembali</button>
+  </section>
+  <p class="muted small" style="text-align:center"><a href="admin.html">Buka dashboard admin (demo)</a></p>
+</main>
+
+<footer class="wrap muted small">© 2026 SouthLinks Tennis Court</footer>
+
+<script>
+/* SouthLinks Tennis Court — VERSI DEMO untuk GitHub Pages.
+ * Menggantikan api.php: semua logika booking jalan di browser, data disimpan di localStorage
+ * (hanya di browser/HP yang dipakai). Versi asli (PHP) ada di folder tennis-booking. */
+(function () {
+  const OPEN = 420, CLOSE = 1200, NIGHT = 1080, STEP = 30, MIN_DUR = 60, MAX_DUR = 300, MAX_DAYS = 60, COURTS = [1, 2];
+  const POLICY = 'Booking tidak dapat di-refund. Jika hujan / lapangan basah, booking dapat di-reschedule dengan harga yang sama.';
+  const BLOCKING = ['pending', 'confirmed', 'resched_pending'];
+  const DEFAULTS = {
+    venue: 'SouthLinks Tennis Court', admin_wa: '6281267233476',
+    bank: 'Bank: (isi nama bank)\nNo. Rek: (isi nomor rekening)\na.n. (isi nama pemilik)',
+    prices: { weekday_day: 150000, weekday_night: 200000, weekend_day: 200000, weekend_night: 250000 },
+    holidays: [
+      { date: '2026-12-25', name: 'Hari Raya Natal' }, { date: '2027-01-01', name: 'Tahun Baru Masehi' },
+      { date: '2027-02-06', name: 'Tahun Baru Imlek' }, { date: '2027-05-01', name: 'Hari Buruh' },
+      { date: '2027-06-01', name: 'Hari Lahir Pancasila' }, { date: '2027-08-17', name: 'Hari Kemerdekaan RI' },
+      { date: '2027-12-25', name: 'Hari Raya Natal' },
+    ],
+  };
+  const KB = 'slt_demo_bookings', KS = 'slt_demo_settings';
+  const settings = () => { const s = JSON.parse(localStorage.getItem(KS) || '{}'); return { ...DEFAULTS, ...s, prices: { ...DEFAULTS.prices, ...(s.prices || {}) } }; };
+  const bookings = () => JSON.parse(localStorage.getItem(KB) || '[]');
+  const saveB = b => localStorage.setItem(KB, JSON.stringify(b));
+
+  const pad = n => String(n).padStart(2, '0');
+  const ymd = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+  const hm = m => pad(Math.floor(m / 60)) + ':' + pad(m % 60);
+  const nowIso = () => new Date().toISOString();
+  const rupiah = n => 'Rp ' + Number(n).toLocaleString('id-ID');
+  const DAYS = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  const dateLabel = s => { const d = parse(s); return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`; };
+  const durLabel = m => ((Math.floor(m / 60) ? Math.floor(m / 60) + ' jam' : '') + (m % 60 ? ' ' + (m % 60) + ' menit' : '')).trim();
+  const timeLabel = b => hm(b.start) + '–' + hm(b.start + b.minutes);
+  const validDate = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && ymd(parse(s)) === s;
+  const today = () => ymd(new Date());
+  const maxDate = () => { const d = new Date(); d.setDate(d.getDate() + MAX_DAYS); return ymd(d); };
+
+  const holidayName = (date, s) => (s.holidays.find(h => h.date === date) || {}).name || null;
+  const isWeekend = (date, s) => [0, 6].includes(parse(date).getDay()) || !!holidayName(date, s);
+  const unitPrice = (date, m, s) => Math.round(s.prices[(isWeekend(date, s) ? 'weekend' : 'weekday') + '_' + (m >= NIGHT ? 'night' : 'day')] * STEP / 60);
+  const units = (start, minutes) => { const a = []; for (let m = start; m < start + minutes; m += STEP) a.push(m); return a; };
+  const total = (date, start, minutes, s) => units(start, minutes).reduce((t, m) => t + unitPrice(date, m, s), 0);
+  const isPast = (date, m) => parse(date).getTime() + m * 60000 <= Date.now();
+  const normPhone = p => { p = String(p || '').replace(/\D+/g, ''); if (p.startsWith('0')) p = '62' + p.slice(1); else if (p.startsWith('8')) p = '62' + p; return p; };
+  const phoneDisp = p => p.startsWith('62') ? '0' + p.slice(2) : p;
+  const code = () => { const d = new Date(); return `SLT-${String(d.getFullYear()).slice(2)}${pad(d.getMonth() + 1)}${pad(d.getDate())}-` + Math.random().toString(16).slice(2, 6).toUpperCase(); };
+  const siteUrl = () => location.href.replace(/[?#].*$/, '').replace(/admin(\.html|\/(index\.html)?)$/, '').replace(/index\.html$/, '');
+
+  function taken(date, list) {
+    const t = { 1: {}, 2: {} };
+    list.forEach(b => { if (b.date === date && BLOCKING.includes(b.status)) units(b.start, b.minutes).forEach(m => t[b.court][m] = b); });
+    return t;
+  }
+  function slotError(date, court, start, minutes, list, checkPast = true) {
+    if (!validDate(date)) return 'Tanggal tidak valid.';
+    if (!COURTS.includes(court)) return 'Pilih court.';
+    if (start % STEP || minutes % STEP) return 'Jam harus kelipatan 30 menit.';
+    if (minutes < MIN_DUR) return 'Minimal booking 1 jam.';
+    if (minutes > MAX_DUR) return 'Maksimal booking 5 jam.';
+    if (start < OPEN || start + minutes > CLOSE) return 'Jam operasional 07:00–20:00.';
+    if (checkPast && isPast(date, start)) return 'Jam yang dipilih sudah lewat.';
+    const t = taken(date, list);
+    if (units(start, minutes).some(m => t[court][m])) return 'Maaf, jam tersebut sudah dibooking. Silakan pilih jam lain.';
+    return null;
+  }
+  function dayInfo(date, s, list) {
+    const t = taken(date, list), us = [];
+    for (let m = OPEN; m < CLOSE; m += STEP) {
+      const courts = {};
+      COURTS.forEach(c => courts[c] = isPast(date, m) ? 'past' : t[c][m] ? 'taken' : 'free');
+      us.push({ m, label: hm(m), night: m >= NIGHT, price: unitPrice(date, m, s), courts });
+    }
+    return { date, label: dateLabel(date), weekend: isWeekend(date, s), holiday: holidayName(date, s), units: us };
+  }
+  const pub = b => ({ ...b, date_label: dateLabel(b.date), time_label: timeLabel(b), duration_label: durLabel(b.minutes) });
+  const detail = b => `Kode: ${b.code}\nNama: ${b.name}\nNo. HP: ${phoneDisp(b.phone)}\nTanggal: ${dateLabel(b.date)}\nCourt: ${b.court}\nJam: ${timeLabel(b)} (${durLabel(b.minutes)})`;
+  const waLink = (phone, text) => 'https://wa.me/' + normPhone(phone) + '?text=' + encodeURIComponent(text);
+
+  function messages(b, s, old) {
+    const v = s.venue, d = detail(b), tot = '\nTotal: ' + rupiah(b.total);
+    const m = {
+      to_admin: `Halo Admin ${v}, saya mau booking lapangan tennis:\n\n${d}${tot}\n\nMohon info nomor rekening untuk transfer. Terima kasih.`,
+      payment: `Halo ${b.name}, terima kasih sudah booking di ${v}.\n\n${d}${tot}\n\nSilakan transfer ke:\n${s.bank}\n\nSetelah transfer, mohon kirim bukti transfer di chat ini ya.\n\nCatatan: ${POLICY}`,
+      confirmed: `Halo ${b.name}, pembayaran Anda sudah kami terima ✅\n\nBOOKING TERKONFIRMASI\n${d}${tot}\n\nCatatan: ${POLICY}\n\nSampai jumpa di lapangan! — ${v}`,
+      cancelled: `Halo ${b.name}, mohon maaf booking Anda di ${v} (kode ${b.code}, ${dateLabel(b.date)}, Court ${b.court}, ${timeLabel(b)}) kami batalkan.`,
+      rain: `Halo ${b.name}, karena hujan / lapangan basah, booking Anda di ${v}:\n\n${d}\n\ndapat di-RESCHEDULE dengan harga yang sama (tidak ada biaya tambahan).\n\nSilakan pilih jadwal baru di link ini:\n${siteUrl()}?reschedule=${encodeURIComponent(b.code)}\n\n(kode booking: ${b.code})`,
+    };
+    if (old) {
+      const oldLine = `Kode lama: ${old.code} — ${dateLabel(old.date)}, Court ${old.court}, ${timeLabel(old)}`;
+      m.to_admin_resched = `Halo Admin ${v}, saya mau RESCHEDULE booking (hujan / lapangan basah):\n\n${oldLine}\n\nJADWAL BARU:\n${d}\n\nHarga sama, sudah dibayar ${rupiah(b.total)}. Terima kasih.`;
+      m.resched_ok = `Halo ${b.name}, reschedule Anda sudah kami konfirmasi ✅\n\nJADWAL BARU\n${d}\n\n(pengganti booking ${old.code}, sudah dibayar)\n\nSampai jumpa di lapangan! — ${v}`;
+      m.resched_reject = `Halo ${b.name}, mohon maaf jadwal reschedule ${dateLabel(b.date)} ${timeLabel(b)} belum bisa kami terima. Silakan pilih jadwal lain di:\n${siteUrl()}?reschedule=${encodeURIComponent(old.code)}`;
+    }
+    return m;
+  }
+
+  class Err extends Error { constructor(msg, status) { super(msg); this.status = status; } }
+  const cleanName = n => String(n || '').replace(/\s+/g, ' ').trim();
+
+  function handle(action, q, input) {
+    const s = settings();
+    switch (action) {
+      case 'config':
+        return { venue: s.venue, prices: s.prices, today: today(), maxDate: maxDate(), courts: COURTS, holidays: s.holidays,
+          step: STEP, minDuration: MIN_DUR, maxDuration: MAX_DUR, close: CLOSE, policy: POLICY };
+      case 'day':
+        if (!validDate(q.get('date'))) throw new Err('Tanggal tidak valid', 400);
+        return dayInfo(q.get('date'), s, bookings());
+      case 'book': {
+        const { date } = input, court = +input.court, start = +input.start, minutes = +input.minutes, name = cleanName(input.name), phone = normPhone(input.phone);
+        if (!input.agree) throw new Err('Centang persetujuan (tidak bisa refund) dulu.', 400);
+        if (!validDate(date) || date < today() || date > maxDate()) throw new Err('Tanggal di luar jadwal booking.', 400);
+        if (name.length < 2 || name.length > 60) throw new Err('Isi nama dengan benar.', 400);
+        if (!/^628\d{7,12}$/.test(phone)) throw new Err('Nomor HP/WA tidak valid (contoh: 0812xxxxxxx).', 400);
+        const list = bookings(), err = slotError(date, court, start, minutes, list);
+        if (err) throw new Err(err, 409);
+        const b = { code: code(), date, court, start, minutes, name, phone, total: total(date, start, minutes, s), status: 'pending', created_at: nowIso(), updated_at: nowIso() };
+        list.push(b); saveB(list);
+        return { ok: true, booking: pub(b), wa: waLink(s.admin_wa, messages(b, s).to_admin) };
+      }
+      case 'resched_lookup': {
+        const list = bookings(), b = list.find(x => x.code === String(q.get('code') || '').trim().toUpperCase());
+        if (!b || b.phone !== normPhone(q.get('phone'))) throw new Err('Kode booking / nomor HP tidak cocok.', 404);
+        if (b.status === 'rescheduled') throw new Err('Booking ini sudah di-reschedule ke ' + (b.rescheduled_to || 'jadwal baru') + '.', 409);
+        if (b.status !== 'reschedule') throw new Err('Booking ini belum bisa di-reschedule. Reschedule hanya untuk booking yang terkena hujan / lapangan basah — hubungi admin via WhatsApp.', 409);
+        return { ok: true, booking: pub(b) };
+      }
+      case 'resched_book': {
+        const list = bookings(), i = list.findIndex(x => x.code === String(input.code || '').trim().toUpperCase());
+        const { date } = input, court = +input.court, start = +input.start;
+        if (!validDate(date) || date < today() || date > maxDate()) throw new Err('Tanggal di luar jadwal booking.', 400);
+        if (i < 0 || list[i].phone !== normPhone(input.phone)) throw new Err('Kode booking / nomor HP tidak cocok.', 409);
+        const old = list[i];
+        if (old.status !== 'reschedule') throw new Err('Booking ini tidak dalam status reschedule.', 409);
+        const err = slotError(date, court, start, old.minutes, list);
+        if (err) throw new Err(err, 409);
+        const nb = { code: code(), date, court, start, minutes: old.minutes, name: old.name, phone: old.phone, total: old.total,
+          status: 'resched_pending', reschedule_of: old.code, created_at: nowIso(), updated_at: nowIso() };
+        Object.assign(old, { status: 'rescheduled', rescheduled_to: nb.code, updated_at: nowIso() });
+        list.push(nb); saveB(list);
+        return { ok: true, booking: pub(nb), old: pub(old), wa: waLink(s.admin_wa, messages(nb, s, old).to_admin_resched) };
+      }
+      case 'admin_list': {
+        const list = bookings(), byCode = Object.fromEntries(list.map(b => [b.code, b]));
+        const sorted = list.slice().sort((a, b) => (b.date + b.created_at).localeCompare(a.date + a.created_at)).map(b => {
+          const m = messages(b, s, b.reschedule_of ? byCode[b.reschedule_of] : null), wa = { chat: 'https://wa.me/' + b.phone };
+          ['payment', 'confirmed', 'rain', 'resched_ok'].forEach(k => { if (m[k] && b.phone) wa[k] = waLink(b.phone, m[k]); });
+          return { ...pub(b), wa };
+        });
+        const date = validDate(q.get('date')) ? q.get('date') : today();
+        return { bookings: sorted, day: dayInfo(date, s, list), today: today(), step: STEP, minDuration: MIN_DUR, maxDuration: MAX_DUR, close: CLOSE };
+      }
+      case 'admin_action': {
+        const list = bookings(), b = list.find(x => x.code === input.code);
+        if (!b) throw new Err('Booking tidak ditemukan.', 409);
+        const old = b.reschedule_of ? list.find(x => x.code === b.reschedule_of) : null;
+        const need = st => [].concat(st).includes(b.status);
+        let key = null;
+        switch (input.op) {
+          case 'confirm': if (!need('pending')) throw new Err('Status booking sudah berubah.', 409); b.status = 'confirmed'; key = 'confirmed'; break;
+          case 'cancel': if (!need(['pending', 'confirmed'])) throw new Err('Booking ini tidak bisa dibatalkan.', 409); b.status = 'cancelled'; key = 'cancelled'; break;
+          case 'reactivate':
+            if (!need('cancelled')) throw new Err('Booking tidak dalam status batal.', 409);
+            if (slotError(b.date, b.court, b.start, b.minutes, list, false)) throw new Err('Slot sudah terisi booking lain.', 409);
+            b.status = 'pending'; break;
+          case 'rain': if (!need('confirmed')) throw new Err('Reschedule hanya untuk booking yang sudah lunas.', 409); b.status = 'reschedule'; key = 'rain'; break;
+          case 'resched_ok': if (!need('resched_pending')) throw new Err('Status booking sudah berubah.', 409); b.status = 'confirmed'; key = 'resched_ok'; break;
+          case 'resched_reject':
+            if (!need('resched_pending')) throw new Err('Status booking sudah berubah.', 409);
+            b.status = 'cancelled';
+            if (old) { old.status = 'reschedule'; delete old.rescheduled_to; }
+            key = 'resched_reject'; break;
+          default: throw new Err('Aksi tidak dikenal.', 400);
+        }
+        b.updated_at = nowIso(); saveB(list);
+        const m = messages(b, s, old);
+        return { ok: true, booking: b, wa: key && m[key] && b.phone ? waLink(b.phone, m[key]) : null };
+      }
+      case 'manual_book': {
+        const { date } = input, court = +input.court, start = +input.start, minutes = +input.minutes, name = cleanName(input.name), phone = normPhone(input.phone);
+        if (!name) throw new Err('Isi nama.', 400);
+        const list = bookings(), err = slotError(date, court, start, minutes, list, false);
+        if (err) throw new Err(err, 409);
+        const b = { code: code(), date, court, start, minutes, name, phone, total: total(date, start, minutes, s), status: 'confirmed', source: 'admin', created_at: nowIso(), updated_at: nowIso() };
+        list.push(b); saveB(list);
+        return { ok: true, booking: b };
+      }
+      case 'admin_settings': return s;
+      case 'save_settings': {
+        const ns = settings();
+        if ('bank' in input) ns.bank = String(input.bank).trim();
+        if ('admin_wa' in input) { const wa = normPhone(input.admin_wa); if (!/^628\d{7,12}$/.test(wa)) throw new Err('Nomor WA admin tidak valid.', 400); ns.admin_wa = wa; }
+        if (input.prices) Object.keys(ns.prices).forEach(k => { if (k in input.prices) ns.prices[k] = Math.max(0, +input.prices[k] || 0); });
+        if (Array.isArray(input.holidays)) ns.holidays = input.holidays.filter(h => validDate(h.date)).map(h => ({ date: h.date, name: String(h.name || '').trim() || 'Tanggal merah' })).sort((a, b) => a.date.localeCompare(b.date));
+        localStorage.setItem(KS, JSON.stringify(ns));
+        return { ok: true, settings: ns };
+      }
+    }
+    throw new Err('Unknown action', 404);
+  }
+
+  const realFetch = window.fetch.bind(window);
+  window.fetch = async function (url, opt = {}) {
+    if (typeof url !== 'string' || !/(^|\/)api\.php/.test(url)) return realFetch(url, opt);
+    const q = new URLSearchParams(url.split('?')[1] || '');
+    const input = opt.body ? JSON.parse(opt.body) : {};
+    const action = input.action || q.get('action');
+    let status = 200, body;
+    try { body = handle(action, q, input); } catch (e) { status = e.status || 500; body = { error: e.message }; }
+    return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+  };
+})();
+
+</script>
+<script>
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rp = n => 'Rp ' + Number(n).toLocaleString('id-ID');
+const hm = m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+const durLabel = m => (Math.floor(m / 60) ? Math.floor(m / 60) + ' jam' : '') + (m % 60 ? ' ' + (m % 60) + ' menit' : '');
+const DAYS = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+const MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+const ymd = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+const parse = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+
+let cfg, day;
+const state = { mode: 'book', date: null, court: 1, minutes: 60, start: null, resched: null };
+
+async function init() {
+  cfg = await (await fetch('api.php?action=config')).json();
+  const hol = new Set(cfg.holidays.map(h => h.date));
+  for (let i = 0; i < 14; i++) {
+    const d = parse(cfg.today); d.setDate(d.getDate() + i);
+    const key = ymd(d), red = d.getDay() === 0 || d.getDay() === 6 || hol.has(key);
+    const b = document.createElement('button');
+    b.dataset.date = key; b.className = red ? 'red' : '';
+    b.innerHTML = `<small>${i === 0 ? 'Hari ini' : DAYS[d.getDay()]}</small><b>${d.getDate()}</b><small>${MONTHS[d.getMonth()]}</small>`;
+    b.onclick = () => selectDate(key);
+    $('#dates').appendChild(b);
+  }
+  $('#dateInput').min = cfg.today; $('#dateInput').max = cfg.maxDate;
+  $('#dateInput').onchange = e => e.target.value && selectDate(e.target.value);
+  document.querySelectorAll('#courtTabs button').forEach(b => b.onclick = () => {
+    state.court = +b.dataset.court;
+    document.querySelectorAll('#courtTabs button').forEach(x => x.classList.toggle('active', x === b));
+    keepOrDropStart(); render();
+  });
+  document.querySelectorAll('#modeTabs button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+  renderDurs();
+  const q = new URLSearchParams(location.search).get('reschedule');
+  if (q) { setMode('resched'); $('#reschedForm').code.value = q; $('#reschedForm').phone.focus(); }
+  selectDate(cfg.today);
+}
+
+function setMode(mode) {
+  state.mode = mode; state.resched = null; state.start = null;
+  document.querySelectorAll('#modeTabs button').forEach(x => x.classList.toggle('active', x.dataset.mode === mode));
+  const r = mode === 'resched';
+  $('#step-resched').hidden = !r;
+  $('#step-pick').hidden = $('#step-form').hidden = r; // tampil setelah booking lama dicek
+  $('#reschedOld').hidden = true; $('#reschedError').textContent = '';
+  $('#guestFields').hidden = r;
+  $('#durs').hidden = r; $('#durFixed').hidden = !r;
+  $('#formTitle').textContent = r ? 'Konfirmasi jadwal baru' : 'Data pemesan';
+  $('#bookBtn').textContent = r ? 'Kirim pesan reschedule ke WhatsApp Admin' : 'Booking & kirim ke WhatsApp Admin';
+  $('#flowNote').textContent = r
+    ? 'Setelah dikirim, WhatsApp terbuka dengan pesan reschedule ke admin. Tidak perlu transfer lagi (harga sama). Admin akan mengirim konfirmasi jadwal baru.'
+    : 'Setelah booking, WhatsApp terbuka dengan pesan ke admin. Admin membalas dengan nomor rekening. Kirim bukti transfer ke admin, lalu Anda menerima konfirmasi booking.';
+  if (!r) state.minutes = 60;
+  renderDurs(); render();
+}
+
+$('#reschedForm').onsubmit = async e => {
+  e.preventDefault();
+  const f = e.target;
+  $('#reschedError').textContent = '';
+  const r = await fetch(`api.php?action=resched_lookup&code=${encodeURIComponent(f.code.value)}&phone=${encodeURIComponent(f.phone.value)}`);
+  const j = await r.json();
+  if (!r.ok) { $('#reschedError').textContent = j.error; return; }
+  const b = j.booking;
+  state.resched = { code: b.code, phone: f.phone.value, old: b };
+  state.minutes = b.minutes; state.start = null;
+  $('#reschedOld').hidden = false;
+  $('#reschedOld').innerHTML = `<p class="label">Booking lama (hujan / lapangan basah)</p>
+    <div><span>Nama</span><b>${esc(b.name)}</b></div><div><span>Jadwal lama</span><b>${b.date_label}, Court ${b.court}, ${b.time_label}</b></div>
+    <div><span>Sudah dibayar</span><b>${rp(b.total)}</b></div>`;
+  $('#durFixed').hidden = false;
+  $('#durFixed').innerHTML = `Lama main mengikuti booking lama: <b>${b.duration_label}</b>`;
+  $('#step-pick').hidden = $('#step-form').hidden = false;
+  render();
+  $('#step-pick').scrollIntoView({ behavior: 'smooth' });
+};
+
+async function selectDate(date) {
+  state.date = date; state.start = null;
+  document.querySelectorAll('#dates button').forEach(b => b.classList.toggle('active', b.dataset.date === date));
+  $('#dateInput').value = date;
+  $('#slots').innerHTML = '<p class="muted">Memuat jadwal…</p>';
+  day = await (await fetch('api.php?action=day&date=' + date)).json();
+  $('#dayNote').innerHTML = `<b>${day.label}</b> · ` + (day.holiday ? `🔴 ${esc(day.holiday)} (harga weekend)` : day.weekend ? 'Harga weekend' : 'Harga weekday');
+  render();
+}
+
+function renderDurs() {
+  const opts = [];
+  for (let m = cfg ? cfg.minDuration : 60; m <= (cfg ? cfg.maxDuration : 300); m += 30) opts.push(m);
+  $('#durs').innerHTML = opts.map(m => `<button data-m="${m}" class="${m === state.minutes ? 'active' : ''}">${durLabel(m)}</button>`).join('');
+  document.querySelectorAll('#durs button').forEach(b => b.onclick = () => {
+    state.minutes = +b.dataset.m; renderDurs(); keepOrDropStart(); render();
+  });
+}
+
+const unit = m => day.units.find(u => u.m === m);
+function fits(start) {
+  if (start + state.minutes > cfg.close) return false;
+  for (let m = start; m < start + state.minutes; m += cfg.step) {
+    const u = unit(m); if (!u || u.courts[state.court] !== 'free') return false;
+  }
+  return true;
+}
+function keepOrDropStart() { if (state.start !== null && day && !fits(state.start)) state.start = null; }
+
+function render() {
+  if (!day || !cfg) return;
+  const sel = m => state.start !== null && m >= state.start && m < state.start + state.minutes;
+  let anyFree = false;
+  $('#slots').innerHTML = day.units.map(u => {
+    const st = u.courts[state.court], ok = st === 'free' && fits(u.m);
+    anyFree ||= ok;
+    const cls = sel(u.m) ? 'sel' : st !== 'free' ? 'taken' : ok ? 'free' : 'short';
+    const sub = st === 'past' ? 'lewat' : st === 'taken' ? 'penuh' : u.night ? '🌙 night' : '☀️ day';
+    return `<button class="slot ${cls}" data-m="${u.m}" ${ok ? '' : 'disabled'}><b>${u.label}</b><small>${sub}</small></button>`;
+  }).join('') + (anyFree ? '' : `<p class="muted span">Tidak ada jam kosong ${durLabel(state.minutes)} di Court ${state.court} pada tanggal ini. Coba court / tanggal lain${state.mode === 'book' ? ' atau kurangi lama main' : ''}.</p>`);
+  document.querySelectorAll('.slot:not([disabled])').forEach(b => b.onclick = () => { state.start = +b.dataset.m; render(); });
+  renderSummary();
+}
+
+function renderSummary() {
+  const ok = state.start !== null && (state.mode === 'book' || state.resched);
+  $('#bookBtn').disabled = !ok;
+  if (!ok) { $('#summary').innerHTML = '<p class="muted">Belum ada jam yang dipilih.</p>'; return; }
+  let total = 0;
+  for (let m = state.start; m < state.start + state.minutes; m += cfg.step) total += unit(m).price;
+  const r = state.mode === 'resched';
+  $('#summary').innerHTML = `${r ? '<p class="label">Jadwal baru</p>' : ''}<div><span>Tanggal</span><b>${day.label}</b></div>
+    <div><span>Court</span><b>Court ${state.court}</b></div>
+    <div><span>Jam</span><b>${hm(state.start)} – ${hm(state.start + state.minutes)} (${durLabel(state.minutes)})</b></div>
+    <div class="total"><span>${r ? 'Biaya' : 'Total'}</span><b>${r ? 'Rp 0 · sudah dibayar ' + rp(state.resched.old.total) : rp(total)}</b></div>`;
+}
+
+$('#bookForm').onsubmit = async e => {
+  e.preventDefault();
+  const f = e.target, err = $('#formError'), r = state.mode === 'resched';
+  err.textContent = '';
+  if (!r) {
+    if (f.name.value.trim().length < 2) { err.textContent = 'Isi nama lengkap.'; return; }
+    if (f.phone.value.replace(/\D/g, '').length < 9) { err.textContent = 'Isi nomor HP / WhatsApp.'; return; }
+    if (!f.agree.checked) { err.textContent = 'Centang persetujuan (tidak bisa refund) dulu.'; return; }
+  }
+  const label = $('#bookBtn').textContent;
+  $('#bookBtn').disabled = true; $('#bookBtn').textContent = 'Memproses…';
+  const waWin = window.open('', '_blank'); // dibuka saat klik supaya tidak diblokir browser
+  try {
+    const body = r
+      ? { action: 'resched_book', code: state.resched.code, phone: state.resched.phone, date: state.date, court: state.court, start: state.start }
+      : { action: 'book', date: state.date, court: state.court, start: state.start, minutes: state.minutes,
+          name: f.name.value, phone: f.phone.value, agree: f.agree.checked };
+    const res = await fetch('api.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const j = await res.json();
+    if (!res.ok) throw new Error(j.error || 'Gagal');
+    if (waWin) waWin.location = j.wa;
+    const b = j.booking;
+    $('#doneTitle').textContent = r ? 'Permintaan reschedule terkirim!' : 'Booking diterima!';
+    $('#doneCode').textContent = b.code;
+    $('#doneSummary').innerHTML = (r ? `<div><span>Jadwal lama</span><b>${j.old.date_label}, ${j.old.time_label}</b></div>` : '')
+      + `<div><span>Nama</span><b>${esc(b.name)}</b></div><div><span>Tanggal</span><b>${b.date_label}</b></div>
+      <div><span>Court</span><b>Court ${b.court}</b></div><div><span>Jam</span><b>${b.time_label} (${b.duration_label})</b></div>
+      <div class="total"><span>${r ? 'Sudah dibayar' : 'Total'}</span><b>${rp(b.total)}</b></div>`;
+    $('#doneStatus').textContent = r ? 'Menunggu konfirmasi admin' : 'Menunggu pembayaran';
+    $('#doneWa').textContent = r ? 'Kirim pesan reschedule ke WhatsApp Admin' : 'Kirim pesan ke WhatsApp Admin';
+    $('#doneNote').textContent = r
+      ? 'Kalau WhatsApp belum terbuka, tekan tombol hijau di atas. Admin akan mengirim konfirmasi jadwal baru.'
+      : 'Kalau WhatsApp belum terbuka, tekan tombol hijau di atas. Admin akan membalas dengan nomor rekening. Ingat: booking tidak bisa refund.';
+    $('#doneWa').href = j.wa;
+    ['#modeTabs', '#step-pick', '#step-form', '#step-resched'].forEach(s => $(s).hidden = true);
+    $('#step-done').hidden = false;
+    scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (ex) {
+    if (waWin) waWin.close();
+    err.textContent = ex.message;
+    $('#bookBtn').textContent = label;
+    selectDate(state.date);
+  }
+};
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Admin — SouthLinks Tennis Court</title>
+<style>
+:root {
+  --green: #0f5132; --green2: #198754; --lime: #c6e33a; --bg: #f3f6f2; --card: #fff;
+  --text: #1c2b22; --muted: #6b7a70; --line: #e2e8e3; --red: #c0392b; --amber: #b7791f;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+.wrap { max-width: 860px; margin: 0 auto; padding: 0 16px; }
+.hero { background: linear-gradient(135deg, var(--green), var(--green2)); color: #fff; padding: 28px 0 56px; }
+.hero h1 { margin: 10px 0 4px; font-size: 28px; }
+.hero p { margin: 0; opacity: .85; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: .3px; }
+.ball { width: 22px; height: 22px; border-radius: 50%; background: var(--lime); box-shadow: inset -4px -2px 0 rgba(0,0,0,.12); }
+main.wrap { margin-top: -36px; }
+.card { background: var(--card); border-radius: 14px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,.05); }
+.card h2 { font-size: 17px; margin: 4px 0 12px; display: flex; align-items: center; gap: 8px; }
+.card h2 + * { margin-top: 0; }
+.num { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--green); color: #fff; font-size: 13px; }
+.muted { color: var(--muted); } .small { font-size: 13px; }
+.prices table { width: 100%; border-collapse: collapse; text-align: center; }
+.prices th, .prices td { padding: 8px; border-bottom: 1px solid var(--line); }
+.prices tbody th { text-align: left; font-weight: 600; }
+.prices td { font-weight: 700; color: var(--green); }
+.prices small { font-weight: 400; color: var(--muted); }
+
+.dates { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; }
+.dates button { flex: 0 0 64px; border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 6px 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; color: var(--text); }
+.dates button b { font-size: 20px; line-height: 1.2; }
+.dates button small { font-size: 11px; color: var(--muted); }
+.dates button.red b { color: var(--red); }
+.dates button.active { background: var(--green); border-color: var(--green); }
+.dates button.active b, .dates button.active small { color: #fff; }
+.other-date { display: inline-block; margin: 10px 0 0; font-size: 14px; color: var(--muted); }
+.other-date input { margin-left: 6px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px; font: inherit; }
+.day-note { margin: 10px 0 18px; }
+
+.tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+.tabs button { flex: 1; padding: 10px; border: 2px solid var(--line); background: #fff; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 15px; }
+.tabs button.active { border-color: var(--green); color: var(--green); background: #eaf5ee; }
+.slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 6px; }
+.slots .span { grid-column: 1 / -1; }
+.slot { border: 1.5px solid var(--line); border-radius: 10px; padding: 8px 6px; align-items: center; background: #fff; text-align: left; cursor: pointer; display: flex; flex-direction: column; font: inherit; color: var(--text); }
+.slot small { color: var(--muted); font-size: 12px; }
+.slot.free:hover { border-color: var(--green2); }
+.slot.sel { background: var(--green); border-color: var(--green); color: #fff; }
+.slot.sel small { color: #d6f0de; }
+.slot.taken { background: #f1f1f1; color: #aaa; cursor: not-allowed; text-decoration: line-through; }
+.slot.taken small { color: #bbb; }
+.slot.short { background: #fafafa; color: #b5bdb8; cursor: not-allowed; }
+.slot.short small { color: #c8cfca; }
+.rules { margin: 14px 0 0; padding-left: 20px; font-size: 14px; }
+.rules li { margin: 3px 0; }
+.mode { display: flex; gap: 8px; margin-bottom: 16px; }
+.mode button { flex: 1; padding: 12px; border-radius: 12px; border: 0; background: #fff; font: inherit; font-weight: 700; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.05); color: var(--muted); }
+.mode button.active { background: var(--green); color: #fff; }
+.durs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+.durs button { border: 1.5px solid var(--line); background: #fff; padding: 7px 12px; border-radius: 99px; font: inherit; font-size: 14px; cursor: pointer; }
+.durs button.active { background: var(--green); border-color: var(--green); color: #fff; font-weight: 700; }
+#durFixed { margin: 0 0 18px; }
+.inline-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; }
+.inline-form .btn { width: auto; margin: 0 0 12px; }
+@media (max-width: 600px) { .inline-form { grid-template-columns: 1fr; } .inline-form .btn { width: 100%; } }
+form label.agree { display: flex; gap: 10px; align-items: flex-start; font-weight: 400; background: #fff8e6; border: 1px solid #f3dfa6; border-radius: 10px; padding: 10px 12px; }
+form label.agree input { width: 18px; height: 18px; margin: 2px 0 0; flex: 0 0 auto; }
+.summary .label { margin: 0 0 4px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--green2); }
+.summary.old { margin-top: 12px; background: #eef4fb; border-color: #d5e3f3; }
+.summary.old .label { color: #2b6cb0; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; margin-top: 12px; font-size: 13px; color: var(--muted); }
+.lg { display: inline-block; width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid var(--line); margin-right: -8px; vertical-align: middle; }
+.lg.sel { background: var(--green); border-color: var(--green); } .lg.taken { background: #e5e5e5; }
+
+.summary { background: #f6faf7; border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; }
+.summary div { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; }
+.summary span { color: var(--muted); }
+.summary .total { border-top: 1px dashed var(--line); margin-top: 4px; padding-top: 8px; font-size: 17px; }
+.summary .total b { color: var(--green); }
+form label { display: block; font-weight: 600; margin-bottom: 12px; font-size: 14px; }
+form input, form textarea, form select { display: block; width: 100%; margin-top: 4px; padding: 11px 12px; border: 1px solid #cfd8d2; border-radius: 10px; font: inherit; font-weight: 400; }
+.btn { display: inline-flex; justify-content: center; align-items: center; gap: 6px; width: 100%; padding: 13px 16px; border-radius: 10px; border: 0; font: inherit; font-weight: 700; cursor: pointer; text-decoration: none; margin-top: 6px; }
+.btn.primary { background: var(--green); color: #fff; }
+.btn.primary:disabled { background: #a9b8ae; cursor: not-allowed; }
+.btn.wa { background: #25d366; color: #fff; }
+.btn.ghost { background: transparent; color: var(--green); border: 1.5px solid var(--green); }
+.error { color: var(--red); font-weight: 600; min-height: 1em; margin: 8px 0 0; }
+.success { text-align: center; }
+.success .summary { text-align: left; }
+.check { width: 56px; height: 56px; margin: 4px auto 8px; border-radius: 50%; background: var(--green2); color: #fff; display: grid; place-items: center; font-size: 30px; }
+.success h2 { justify-content: center; }
+.badge { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 12px; font-weight: 700; }
+.badge.pending { background: #fff4d6; color: var(--amber); }
+.badge.confirmed { background: #dcf3e4; color: var(--green2); }
+.badge.reschedule, .badge.resched_pending { background: #e3edfb; color: #2b6cb0; }
+.badge.rescheduled { background: #eee; color: #777; }
+.badge.cancelled { background: #fbe2df; color: var(--red); }
+footer { text-align: center; padding: 10px 16px 30px; }
+[hidden] { display: none !important; }
+.demo-banner { background: #fff3cd; color: #7a5200; text-align: center; font-size: 13px; font-weight: 600; padding: 6px 12px; }
+
+.wrap.wide { max-width: 1100px; }
+body.admin { min-height: 100vh; }
+.login { max-width: 380px; margin: 10vh auto; }
+.brand.dark { color: var(--green); margin-bottom: 10px; }
+.topbar { background: var(--green); color: #fff; position: sticky; top: 0; z-index: 5; }
+.topbar .wrap { display: flex; align-items: center; gap: 16px; padding-top: 10px; padding-bottom: 10px; flex-wrap: wrap; }
+.tag { background: var(--lime); color: var(--green); font-size: 11px; padding: 1px 7px; border-radius: 99px; }
+#nav { display: flex; gap: 4px; flex: 1; }
+#nav button, .logout button { background: transparent; border: 0; color: #d7ecdf; font: inherit; font-weight: 600; padding: 7px 12px; border-radius: 8px; cursor: pointer; }
+#nav button.active { background: rgba(255,255,255,.16); color: #fff; }
+.logout button { border: 1px solid rgba(255,255,255,.35); }
+.count:not(:empty) { background: #f6c343; color: #3d2c00; border-radius: 99px; padding: 0 7px; font-size: 12px; margin-left: 4px; }
+body.admin main.wrap { margin-top: 18px; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.stat { background: #fff; border-radius: 14px; padding: 14px 16px; box-shadow: 0 2px 10px rgba(0,0,0,.05); display: flex; flex-direction: column; border-left: 4px solid var(--green2); }
+.stat.warn { border-left-color: #f0ad1e; }
+.stat span { color: var(--muted); font-size: 13px; }
+.stat b { font-size: 24px; }
+.stat small { color: var(--muted); font-size: 12px; }
+
+.toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.toolbar input[type=search] { padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; font: inherit; min-width: 240px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chips button { border: 1px solid var(--line); background: #fff; padding: 6px 12px; border-radius: 99px; font: inherit; font-size: 13px; cursor: pointer; }
+.chips button.active { background: var(--green); color: #fff; border-color: var(--green); }
+.flow { background: #f6faf7; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; }
+
+.order { display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; padding: 14px 4px; border-bottom: 1px solid var(--line); }
+.order:last-child { border-bottom: 0; }
+.order.cancelled { opacity: .6; }
+.o-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.o-top code { font-size: 12px; color: var(--muted); }
+.o-when { margin: 2px 0; }
+.o-total { font-weight: 800; color: var(--green); font-size: 17px; text-align: right; }
+.o-actions { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; }
+.btn.sm { width: auto; padding: 7px 14px; font-size: 13px; margin: 0; }
+.btn.danger { color: var(--red); border-color: #e7b8b2; }
+.empty { text-align: center; padding: 30px; }
+a { color: var(--green2); }
+
+.datenav { display: flex; gap: 6px; align-items: center; }
+.datenav button { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 6px 12px; font: inherit; cursor: pointer; }
+.datenav button.link { border: 0; color: var(--green2); font-weight: 600; }
+.datenav input { padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; font: inherit; }
+.grid { display: grid; grid-template-columns: 110px 1fr 1fr; gap: 4px; }
+.g-head { font-weight: 700; text-align: center; padding: 6px; color: var(--green); }
+.g-time { font-weight: 600; font-size: 13px; display: flex; flex-direction: column; justify-content: center; }
+.g-time small { color: var(--muted); font-weight: 400; font-size: 11px; }
+.g-cell { border-radius: 8px; padding: 6px 10px; min-height: 44px; display: flex; flex-direction: column; justify-content: center; font: inherit; font-size: 13px; text-align: left; border: 0; }
+.g-cell small { font-size: 11px; }
+.g-cell.free { background: #fff; border: 1.5px dashed #cfd8d2; color: #9aa79f; cursor: pointer; }
+.g-cell.free:hover { border-color: var(--green2); color: var(--green2); }
+.g-cell.confirmed { background: #dcf3e4; color: var(--green); }
+.g-cell.pending { background: #fff4d6; color: #7a5200; }
+.g-cell.past { background: #f1f1f1; }
+
+.price-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0 12px; }
+#settingsForm h2 { margin-top: 22px; margin-bottom: 2px; }
+#settingsForm h2:first-child { margin-top: 0; }
+.hol { display: grid; grid-template-columns: 110px 1fr 32px; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.hol button { border: 0; background: #fbe2df; color: var(--red); border-radius: 6px; cursor: pointer; height: 26px; }
+.hol-add { display: flex; gap: 8px; margin: 10px 0 18px; flex-wrap: wrap; }
+.hol-add input { padding: 9px 10px; border: 1px solid #cfd8d2; border-radius: 10px; font: inherit; flex: 1; min-width: 140px; }
+.hol-add .btn { width: auto; margin: 0; }
+
+dialog { border: 0; border-radius: 14px; padding: 20px; width: min(400px, 92vw); }
+dialog::backdrop { background: rgba(0,0,0,.4); }
+dialog h2 { margin-top: 0; }
+dialog .row { display: flex; gap: 8px; }
+@media (max-width: 600px) {
+  .grid { grid-template-columns: 74px 1fr 1fr; }
+  .toolbar input[type=search] { min-width: 0; width: 100%; }
+}
+.stat.blue { border-left-color: #3b82c4; }
+.btn.blue { background: #e3edfb; color: #2b6cb0; }
+.resched-note { color: #2b6cb0; margin: 2px 0; }
+.order.rescheduled { opacity: .6; }
+.g-time.half { color: var(--muted); font-weight: 400; }
+.g-time { min-height: 30px; }
+.g-cell { min-height: 30px; padding: 4px 10px; }
+.g-cell.cont { border-top-left-radius: 0; border-top-right-radius: 0; margin-top: -4px; }
+.g-cell.resched_pending { background: #e3edfb; color: #2b6cb0; }
+.o-actions .muted.small { align-self: center; }
+
+</style>
+
+</head>
+<body class="admin">
+<div class="demo-banner">VERSI DEMO — data booking hanya tersimpan di browser ini (belum online). Tombol WhatsApp tetap berfungsi.</div>
+<header class="topbar">
+  <div class="wrap wide">
+    <div class="brand"><span class="ball"></span>SouthLinks Tennis Court <span class="tag">Admin</span></div>
+    <nav id="nav">
+      <button data-tab="orders" class="active">Pesanan <span class="count" id="navPending"></span></button>
+      <button data-tab="schedule">Jadwal</button>
+      <button data-tab="settings">Pengaturan</button>
+    </nav>
+    <div class="logout"><a href="index.html" style="color:#fff;margin-right:8px">Halaman booking</a><button onclick="if(confirm('Hapus semua data demo di browser ini?')){localStorage.clear();location.reload()}">Reset demo</button></div>
+  </div>
+</header>
+
+<main class="wrap wide">
+  <section class="stats" id="stats"></section>
+
+  <!-- PESANAN -->
+  <section id="tab-orders" class="tab">
+    <div class="card">
+      <div class="toolbar">
+        <div class="chips" id="filter">
+          <button data-f="action" class="active">Perlu tindakan</button>
+          <button data-f="confirmed">Lunas</button>
+          <button data-f="resched">Reschedule</button>
+          <button data-f="upcoming">Akan datang</button>
+          <button data-f="cancelled">Batal</button>
+          <button data-f="all">Semua</button>
+        </div>
+        <input type="search" id="search" placeholder="Cari nama / no HP / kode">
+      </div>
+      <div class="flow muted small">
+        <b>Booking:</b> pesan tamu masuk ke WA → <b>① Kirim No. Rek</b> → tamu kirim bukti transfer → <b>② OK, Lunas</b> (WA konfirmasi terbuka, tinggal kirim). Tidak ada refund.<br>
+        <b>Hujan / lapangan basah:</b> di booking Lunas tekan <b>🌧 Reschedule</b> → WA berisi link reschedule terbuka → tamu pilih jadwal baru &amp; kirim pesan reschedule → <b>OK, Reschedule</b>. Harga sama.
+      </div>
+      <div id="orders"></div>
+    </div>
+  </section>
+
+  <!-- JADWAL -->
+  <section id="tab-schedule" class="tab" hidden>
+    <div class="card">
+      <div class="toolbar">
+        <div class="datenav">
+          <button id="prevDay">‹</button>
+          <input type="date" id="schedDate">
+          <button id="nextDay">›</button>
+          <button id="todayBtn" class="link">Hari ini</button>
+        </div>
+        <span id="schedNote" class="muted"></span>
+      </div>
+      <div class="grid" id="grid"></div>
+      <p class="muted small">Klik slot kosong untuk input booking manual (walk-in / via telepon) — langsung tercatat lunas.</p>
+    </div>
+  </section>
+
+  <!-- PENGATURAN -->
+  <section id="tab-settings" class="tab" hidden>
+    <form class="card" id="settingsForm">
+      <h2>Rekening pembayaran</h2>
+      <p class="muted small">Teks ini otomatis dimasukkan ke pesan WA "Kirim No. Rek".</p>
+      <label><textarea name="bank" rows="4"></textarea></label>
+      <h2>Nomor WhatsApp admin</h2>
+      <p class="muted small">Booking dari tamu dikirim ke nomor ini.</p>
+      <label><input name="admin_wa" inputmode="tel"></label>
+      <h2>Harga per jam</h2>
+      <div class="price-grid">
+        <label>Weekday · Day (07–18)<input type="number" name="weekday_day" step="1000" min="0"></label>
+        <label>Weekday · Night (18–20)<input type="number" name="weekday_night" step="1000" min="0"></label>
+        <label>Weekend/Tgl merah · Day<input type="number" name="weekend_day" step="1000" min="0"></label>
+        <label>Weekend/Tgl merah · Night<input type="number" name="weekend_night" step="1000" min="0"></label>
+      </div>
+      <h2>Tanggal merah</h2>
+      <p class="muted small">Tanggal di sini dihitung harga weekend. Tambahkan libur nasional yang tanggalnya berubah tiap tahun (Idul Fitri, Idul Adha, Nyepi, Waisak, dll.).</p>
+      <div id="holidays"></div>
+      <div class="hol-add">
+        <input type="date" id="holDate"><input id="holName" placeholder="Nama hari libur"><button type="button" class="btn ghost" id="holAdd">+ Tambah</button>
+      </div>
+      <button class="btn primary">Simpan pengaturan</button>
+      <p class="error" id="settingsMsg"></p>
+    </form>
+  </section>
+</main>
+
+<!-- modal booking manual -->
+<dialog id="manual">
+  <form method="dialog" id="manualForm">
+    <h2>Booking manual</h2>
+    <p id="manualInfo" class="muted"></p>
+    <label>Lama main<select name="dur"></select></label>
+    <label>Nama<input name="name" required></label>
+    <label>No. HP (opsional)<input name="phone" inputmode="tel"></label>
+    <p class="error" id="manualErr"></p>
+    <div class="row"><button value="cancel" class="btn ghost" formnovalidate>Batal</button><button value="ok" class="btn primary">Simpan (lunas)</button></div>
+  </form>
+</dialog>
+
+<script>const CSRF = "demo";</script>
+<script>
+/* SouthLinks Tennis Court — VERSI DEMO untuk GitHub Pages.
+ * Menggantikan api.php: semua logika booking jalan di browser, data disimpan di localStorage
+ * (hanya di browser/HP yang dipakai). Versi asli (PHP) ada di folder tennis-booking. */
+(function () {
+  const OPEN = 420, CLOSE = 1200, NIGHT = 1080, STEP = 30, MIN_DUR = 60, MAX_DUR = 300, MAX_DAYS = 60, COURTS = [1, 2];
+  const POLICY = 'Booking tidak dapat di-refund. Jika hujan / lapangan basah, booking dapat di-reschedule dengan harga yang sama.';
+  const BLOCKING = ['pending', 'confirmed', 'resched_pending'];
+  const DEFAULTS = {
+    venue: 'SouthLinks Tennis Court', admin_wa: '6281267233476',
+    bank: 'Bank: (isi nama bank)\nNo. Rek: (isi nomor rekening)\na.n. (isi nama pemilik)',
+    prices: { weekday_day: 150000, weekday_night: 200000, weekend_day: 200000, weekend_night: 250000 },
+    holidays: [
+      { date: '2026-12-25', name: 'Hari Raya Natal' }, { date: '2027-01-01', name: 'Tahun Baru Masehi' },
+      { date: '2027-02-06', name: 'Tahun Baru Imlek' }, { date: '2027-05-01', name: 'Hari Buruh' },
+      { date: '2027-06-01', name: 'Hari Lahir Pancasila' }, { date: '2027-08-17', name: 'Hari Kemerdekaan RI' },
+      { date: '2027-12-25', name: 'Hari Raya Natal' },
+    ],
+  };
+  const KB = 'slt_demo_bookings', KS = 'slt_demo_settings';
+  const settings = () => { const s = JSON.parse(localStorage.getItem(KS) || '{}'); return { ...DEFAULTS, ...s, prices: { ...DEFAULTS.prices, ...(s.prices || {}) } }; };
+  const bookings = () => JSON.parse(localStorage.getItem(KB) || '[]');
+  const saveB = b => localStorage.setItem(KB, JSON.stringify(b));
+
+  const pad = n => String(n).padStart(2, '0');
+  const ymd = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+  const hm = m => pad(Math.floor(m / 60)) + ':' + pad(m % 60);
+  const nowIso = () => new Date().toISOString();
+  const rupiah = n => 'Rp ' + Number(n).toLocaleString('id-ID');
+  const DAYS = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  const dateLabel = s => { const d = parse(s); return `${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`; };
+  const durLabel = m => ((Math.floor(m / 60) ? Math.floor(m / 60) + ' jam' : '') + (m % 60 ? ' ' + (m % 60) + ' menit' : '')).trim();
+  const timeLabel = b => hm(b.start) + '–' + hm(b.start + b.minutes);
+  const validDate = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && ymd(parse(s)) === s;
+  const today = () => ymd(new Date());
+  const maxDate = () => { const d = new Date(); d.setDate(d.getDate() + MAX_DAYS); return ymd(d); };
+
+  const holidayName = (date, s) => (s.holidays.find(h => h.date === date) || {}).name || null;
+  const isWeekend = (date, s) => [0, 6].includes(parse(date).getDay()) || !!holidayName(date, s);
+  const unitPrice = (date, m, s) => Math.round(s.prices[(isWeekend(date, s) ? 'weekend' : 'weekday') + '_' + (m >= NIGHT ? 'night' : 'day')] * STEP / 60);
+  const units = (start, minutes) => { const a = []; for (let m = start; m < start + minutes; m += STEP) a.push(m); return a; };
+  const total = (date, start, minutes, s) => units(start, minutes).reduce((t, m) => t + unitPrice(date, m, s), 0);
+  const isPast = (date, m) => parse(date).getTime() + m * 60000 <= Date.now();
+  const normPhone = p => { p = String(p || '').replace(/\D+/g, ''); if (p.startsWith('0')) p = '62' + p.slice(1); else if (p.startsWith('8')) p = '62' + p; return p; };
+  const phoneDisp = p => p.startsWith('62') ? '0' + p.slice(2) : p;
+  const code = () => { const d = new Date(); return `SLT-${String(d.getFullYear()).slice(2)}${pad(d.getMonth() + 1)}${pad(d.getDate())}-` + Math.random().toString(16).slice(2, 6).toUpperCase(); };
+  const siteUrl = () => location.href.replace(/[?#].*$/, '').replace(/admin(\.html|\/(index\.html)?)$/, '').replace(/index\.html$/, '');
+
+  function taken(date, list) {
+    const t = { 1: {}, 2: {} };
+    list.forEach(b => { if (b.date === date && BLOCKING.includes(b.status)) units(b.start, b.minutes).forEach(m => t[b.court][m] = b); });
+    return t;
+  }
+  function slotError(date, court, start, minutes, list, checkPast = true) {
+    if (!validDate(date)) return 'Tanggal tidak valid.';
+    if (!COURTS.includes(court)) return 'Pilih court.';
+    if (start % STEP || minutes % STEP) return 'Jam harus kelipatan 30 menit.';
+    if (minutes < MIN_DUR) return 'Minimal booking 1 jam.';
+    if (minutes > MAX_DUR) return 'Maksimal booking 5 jam.';
+    if (start < OPEN || start + minutes > CLOSE) return 'Jam operasional 07:00–20:00.';
+    if (checkPast && isPast(date, start)) return 'Jam yang dipilih sudah lewat.';
+    const t = taken(date, list);
+    if (units(start, minutes).some(m => t[court][m])) return 'Maaf, jam tersebut sudah dibooking. Silakan pilih jam lain.';
+    return null;
+  }
+  function dayInfo(date, s, list) {
+    const t = taken(date, list), us = [];
+    for (let m = OPEN; m < CLOSE; m += STEP) {
+      const courts = {};
+      COURTS.forEach(c => courts[c] = isPast(date, m) ? 'past' : t[c][m] ? 'taken' : 'free');
+      us.push({ m, label: hm(m), night: m >= NIGHT, price: unitPrice(date, m, s), courts });
+    }
+    return { date, label: dateLabel(date), weekend: isWeekend(date, s), holiday: holidayName(date, s), units: us };
+  }
+  const pub = b => ({ ...b, date_label: dateLabel(b.date), time_label: timeLabel(b), duration_label: durLabel(b.minutes) });
+  const detail = b => `Kode: ${b.code}\nNama: ${b.name}\nNo. HP: ${phoneDisp(b.phone)}\nTanggal: ${dateLabel(b.date)}\nCourt: ${b.court}\nJam: ${timeLabel(b)} (${durLabel(b.minutes)})`;
+  const waLink = (phone, text) => 'https://wa.me/' + normPhone(phone) + '?text=' + encodeURIComponent(text);
+
+  function messages(b, s, old) {
+    const v = s.venue, d = detail(b), tot = '\nTotal: ' + rupiah(b.total);
+    const m = {
+      to_admin: `Halo Admin ${v}, saya mau booking lapangan tennis:\n\n${d}${tot}\n\nMohon info nomor rekening untuk transfer. Terima kasih.`,
+      payment: `Halo ${b.name}, terima kasih sudah booking di ${v}.\n\n${d}${tot}\n\nSilakan transfer ke:\n${s.bank}\n\nSetelah transfer, mohon kirim bukti transfer di chat ini ya.\n\nCatatan: ${POLICY}`,
+      confirmed: `Halo ${b.name}, pembayaran Anda sudah kami terima ✅\n\nBOOKING TERKONFIRMASI\n${d}${tot}\n\nCatatan: ${POLICY}\n\nSampai jumpa di lapangan! — ${v}`,
+      cancelled: `Halo ${b.name}, mohon maaf booking Anda di ${v} (kode ${b.code}, ${dateLabel(b.date)}, Court ${b.court}, ${timeLabel(b)}) kami batalkan.`,
+      rain: `Halo ${b.name}, karena hujan / lapangan basah, booking Anda di ${v}:\n\n${d}\n\ndapat di-RESCHEDULE dengan harga yang sama (tidak ada biaya tambahan).\n\nSilakan pilih jadwal baru di link ini:\n${siteUrl()}?reschedule=${encodeURIComponent(b.code)}\n\n(kode booking: ${b.code})`,
+    };
+    if (old) {
+      const oldLine = `Kode lama: ${old.code} — ${dateLabel(old.date)}, Court ${old.court}, ${timeLabel(old)}`;
+      m.to_admin_resched = `Halo Admin ${v}, saya mau RESCHEDULE booking (hujan / lapangan basah):\n\n${oldLine}\n\nJADWAL BARU:\n${d}\n\nHarga sama, sudah dibayar ${rupiah(b.total)}. Terima kasih.`;
+      m.resched_ok = `Halo ${b.name}, reschedule Anda sudah kami konfirmasi ✅\n\nJADWAL BARU\n${d}\n\n(pengganti booking ${old.code}, sudah dibayar)\n\nSampai jumpa di lapangan! — ${v}`;
+      m.resched_reject = `Halo ${b.name}, mohon maaf jadwal reschedule ${dateLabel(b.date)} ${timeLabel(b)} belum bisa kami terima. Silakan pilih jadwal lain di:\n${siteUrl()}?reschedule=${encodeURIComponent(old.code)}`;
+    }
+    return m;
+  }
+
+  class Err extends Error { constructor(msg, status) { super(msg); this.status = status; } }
+  const cleanName = n => String(n || '').replace(/\s+/g, ' ').trim();
+
+  function handle(action, q, input) {
+    const s = settings();
+    switch (action) {
+      case 'config':
+        return { venue: s.venue, prices: s.prices, today: today(), maxDate: maxDate(), courts: COURTS, holidays: s.holidays,
+          step: STEP, minDuration: MIN_DUR, maxDuration: MAX_DUR, close: CLOSE, policy: POLICY };
+      case 'day':
+        if (!validDate(q.get('date'))) throw new Err('Tanggal tidak valid', 400);
+        return dayInfo(q.get('date'), s, bookings());
+      case 'book': {
+        const { date } = input, court = +input.court, start = +input.start, minutes = +input.minutes, name = cleanName(input.name), phone = normPhone(input.phone);
+        if (!input.agree) throw new Err('Centang persetujuan (tidak bisa refund) dulu.', 400);
+        if (!validDate(date) || date < today() || date > maxDate()) throw new Err('Tanggal di luar jadwal booking.', 400);
+        if (name.length < 2 || name.length > 60) throw new Err('Isi nama dengan benar.', 400);
+        if (!/^628\d{7,12}$/.test(phone)) throw new Err('Nomor HP/WA tidak valid (contoh: 0812xxxxxxx).', 400);
+        const list = bookings(), err = slotError(date, court, start, minutes, list);
+        if (err) throw new Err(err, 409);
+        const b = { code: code(), date, court, start, minutes, name, phone, total: total(date, start, minutes, s), status: 'pending', created_at: nowIso(), updated_at: nowIso() };
+        list.push(b); saveB(list);
+        return { ok: true, booking: pub(b), wa: waLink(s.admin_wa, messages(b, s).to_admin) };
+      }
+      case 'resched_lookup': {
+        const list = bookings(), b = list.find(x => x.code === String(q.get('code') || '').trim().toUpperCase());
+        if (!b || b.phone !== normPhone(q.get('phone'))) throw new Err('Kode booking / nomor HP tidak cocok.', 404);
+        if (b.status === 'rescheduled') throw new Err('Booking ini sudah di-reschedule ke ' + (b.rescheduled_to || 'jadwal baru') + '.', 409);
+        if (b.status !== 'reschedule') throw new Err('Booking ini belum bisa di-reschedule. Reschedule hanya untuk booking yang terkena hujan / lapangan basah — hubungi admin via WhatsApp.', 409);
+        return { ok: true, booking: pub(b) };
+      }
+      case 'resched_book': {
+        const list = bookings(), i = list.findIndex(x => x.code === String(input.code || '').trim().toUpperCase());
+        const { date } = input, court = +input.court, start = +input.start;
+        if (!validDate(date) || date < today() || date > maxDate()) throw new Err('Tanggal di luar jadwal booking.', 400);
+        if (i < 0 || list[i].phone !== normPhone(input.phone)) throw new Err('Kode booking / nomor HP tidak cocok.', 409);
+        const old = list[i];
+        if (old.status !== 'reschedule') throw new Err('Booking ini tidak dalam status reschedule.', 409);
+        const err = slotError(date, court, start, old.minutes, list);
+        if (err) throw new Err(err, 409);
+        const nb = { code: code(), date, court, start, minutes: old.minutes, name: old.name, phone: old.phone, total: old.total,
+          status: 'resched_pending', reschedule_of: old.code, created_at: nowIso(), updated_at: nowIso() };
+        Object.assign(old, { status: 'rescheduled', rescheduled_to: nb.code, updated_at: nowIso() });
+        list.push(nb); saveB(list);
+        return { ok: true, booking: pub(nb), old: pub(old), wa: waLink(s.admin_wa, messages(nb, s, old).to_admin_resched) };
+      }
+      case 'admin_list': {
+        const list = bookings(), byCode = Object.fromEntries(list.map(b => [b.code, b]));
+        const sorted = list.slice().sort((a, b) => (b.date + b.created_at).localeCompare(a.date + a.created_at)).map(b => {
+          const m = messages(b, s, b.reschedule_of ? byCode[b.reschedule_of] : null), wa = { chat: 'https://wa.me/' + b.phone };
+          ['payment', 'confirmed', 'rain', 'resched_ok'].forEach(k => { if (m[k] && b.phone) wa[k] = waLink(b.phone, m[k]); });
+          return { ...pub(b), wa };
+        });
+        const date = validDate(q.get('date')) ? q.get('date') : today();
+        return { bookings: sorted, day: dayInfo(date, s, list), today: today(), step: STEP, minDuration: MIN_DUR, maxDuration: MAX_DUR, close: CLOSE };
+      }
+      case 'admin_action': {
+        const list = bookings(), b = list.find(x => x.code === input.code);
+        if (!b) throw new Err('Booking tidak ditemukan.', 409);
+        const old = b.reschedule_of ? list.find(x => x.code === b.reschedule_of) : null;
+        const need = st => [].concat(st).includes(b.status);
+        let key = null;
+        switch (input.op) {
+          case 'confirm': if (!need('pending')) throw new Err('Status booking sudah berubah.', 409); b.status = 'confirmed'; key = 'confirmed'; break;
+          case 'cancel': if (!need(['pending', 'confirmed'])) throw new Err('Booking ini tidak bisa dibatalkan.', 409); b.status = 'cancelled'; key = 'cancelled'; break;
+          case 'reactivate':
+            if (!need('cancelled')) throw new Err('Booking tidak dalam status batal.', 409);
+            if (slotError(b.date, b.court, b.start, b.minutes, list, false)) throw new Err('Slot sudah terisi booking lain.', 409);
+            b.status = 'pending'; break;
+          case 'rain': if (!need('confirmed')) throw new Err('Reschedule hanya untuk booking yang sudah lunas.', 409); b.status = 'reschedule'; key = 'rain'; break;
+          case 'resched_ok': if (!need('resched_pending')) throw new Err('Status booking sudah berubah.', 409); b.status = 'confirmed'; key = 'resched_ok'; break;
+          case 'resched_reject':
+            if (!need('resched_pending')) throw new Err('Status booking sudah berubah.', 409);
+            b.status = 'cancelled';
+            if (old) { old.status = 'reschedule'; delete old.rescheduled_to; }
+            key = 'resched_reject'; break;
+          default: throw new Err('Aksi tidak dikenal.', 400);
+        }
+        b.updated_at = nowIso(); saveB(list);
+        const m = messages(b, s, old);
+        return { ok: true, booking: b, wa: key && m[key] && b.phone ? waLink(b.phone, m[key]) : null };
+      }
+      case 'manual_book': {
+        const { date } = input, court = +input.court, start = +input.start, minutes = +input.minutes, name = cleanName(input.name), phone = normPhone(input.phone);
+        if (!name) throw new Err('Isi nama.', 400);
+        const list = bookings(), err = slotError(date, court, start, minutes, list, false);
+        if (err) throw new Err(err, 409);
+        const b = { code: code(), date, court, start, minutes, name, phone, total: total(date, start, minutes, s), status: 'confirmed', source: 'admin', created_at: nowIso(), updated_at: nowIso() };
+        list.push(b); saveB(list);
+        return { ok: true, booking: b };
+      }
+      case 'admin_settings': return s;
+      case 'save_settings': {
+        const ns = settings();
+        if ('bank' in input) ns.bank = String(input.bank).trim();
+        if ('admin_wa' in input) { const wa = normPhone(input.admin_wa); if (!/^628\d{7,12}$/.test(wa)) throw new Err('Nomor WA admin tidak valid.', 400); ns.admin_wa = wa; }
+        if (input.prices) Object.keys(ns.prices).forEach(k => { if (k in input.prices) ns.prices[k] = Math.max(0, +input.prices[k] || 0); });
+        if (Array.isArray(input.holidays)) ns.holidays = input.holidays.filter(h => validDate(h.date)).map(h => ({ date: h.date, name: String(h.name || '').trim() || 'Tanggal merah' })).sort((a, b) => a.date.localeCompare(b.date));
+        localStorage.setItem(KS, JSON.stringify(ns));
+        return { ok: true, settings: ns };
+      }
+    }
+    throw new Err('Unknown action', 404);
+  }
+
+  const realFetch = window.fetch.bind(window);
+  window.fetch = async function (url, opt = {}) {
+    if (typeof url !== 'string' || !/(^|\/)api\.php/.test(url)) return realFetch(url, opt);
+    const q = new URLSearchParams(url.split('?')[1] || '');
+    const input = opt.body ? JSON.parse(opt.body) : {};
+    const action = input.action || q.get('action');
+    let status = 200, body;
+    try { body = handle(action, q, input); } catch (e) { status = e.status || 500; body = { error: e.message }; }
+    return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+  };
+})();
+
+</script>
+<script>
+/* SouthLinks Tennis Court — dashboard admin. CSRF didefinisikan di admin/index.php */
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const rp = n => 'Rp ' + Number(n).toLocaleString('id-ID');
+const hm = m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+const durLabel = m => ((Math.floor(m / 60) ? Math.floor(m / 60) + ' jam' : '') + (m % 60 ? ' ' + (m % 60) + ' menit' : '')).trim();
+const STATUS = {
+  pending: 'Menunggu bayar', confirmed: 'Lunas', cancelled: 'Batal',
+  reschedule: 'Reschedule · tunggu jadwal baru', resched_pending: 'Reschedule · perlu OK', rescheduled: 'Sudah dipindah',
+};
+const BLOCKING = ['pending', 'confirmed', 'resched_pending'];
+let data = { bookings: [] }, filter = 'action', schedDate = null, lastAction = null;
+
+async function api(action, body, query = '') {
+  const opt = body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, csrf: CSRF, ...body }) } : {};
+  const r = await fetch('../api.php?action=' + action + query, opt);
+  const j = await r.json();
+  if (r.status === 401) { location.reload(); throw new Error(j.error); }
+  if (!r.ok) throw new Error(j.error || 'Gagal');
+  return j;
+}
+
+async function load() {
+  data = await api('admin_list', null, '&date=' + (schedDate || ''));
+  if (!schedDate) { schedDate = data.today; $('#schedDate').value = schedDate; }
+  const need = data.bookings.filter(b => b.status === 'pending' || b.status === 'resched_pending').length;
+  if (lastAction !== null && need > lastAction) beep();
+  lastAction = need;
+  document.title = (need ? `(${need}) ` : '') + 'Admin — SouthLinks Tennis';
+  $('#navPending').textContent = need || '';
+  renderStats(); renderOrders(); renderGrid();
+}
+
+function renderStats() {
+  const t = data.today, month = t.slice(0, 7), active = data.bookings.filter(b => BLOCKING.includes(b.status));
+  const todays = active.filter(b => b.date === t);
+  const minsToday = todays.reduce((n, b) => n + b.minutes, 0);
+  // pendapatan: booking lunas (+ yang sedang reschedule, karena uangnya sudah masuk) — booking lama yang sudah dipindah tidak dihitung dua kali
+  const revenue = data.bookings.filter(b => ['confirmed', 'reschedule', 'resched_pending'].includes(b.status) && b.date.startsWith(month)).reduce((n, b) => n + b.total, 0);
+  const pending = data.bookings.filter(b => b.status === 'pending');
+  const resched = data.bookings.filter(b => b.status === 'reschedule' || b.status === 'resched_pending');
+  $('#stats').innerHTML = `
+    <div class="stat warn"><span>Menunggu pembayaran</span><b>${pending.length}</b><small>${rp(pending.reduce((n, b) => n + b.total, 0))}</small></div>
+    <div class="stat blue"><span>Reschedule (hujan)</span><b>${resched.length}</b><small>${resched.filter(b => b.status === 'resched_pending').length} perlu OK admin</small></div>
+    <div class="stat"><span>Booking hari ini</span><b>${todays.length}</b><small>${durLabel(minsToday) || '0 jam'} dari 26 jam terpakai</small></div>
+    <div class="stat"><span>Pendapatan bulan ini (lunas)</span><b>${rp(revenue)}</b><small>berdasarkan tanggal main</small></div>`;
+}
+
+function matches(b) {
+  switch (filter) {
+    case 'action': return b.status === 'pending' || b.status === 'resched_pending';
+    case 'resched': return ['reschedule', 'resched_pending', 'rescheduled'].includes(b.status) || !!b.reschedule_of;
+    case 'upcoming': return BLOCKING.includes(b.status) && b.date >= data.today;
+    case 'all': return true;
+    default: return b.status === filter;
+  }
+}
+
+function actions(b) {
+  const wa = (k, label, cls = 'ghost') => b.wa[k] ? `<a class="btn ${cls} sm" href="${b.wa[k]}" target="_blank" rel="noopener">${label}</a>` : '';
+  const btn = (op, label, cls = 'ghost') => `<button class="btn ${cls} sm" data-op="${op}" data-code="${b.code}">${label}</button>`;
+  switch (b.status) {
+    case 'pending': return wa('payment', '① Kirim No. Rek', 'wa') + btn('confirm', '② OK, Lunas', 'primary') + btn('cancel', 'Batalkan', 'ghost danger');
+    case 'confirmed': return wa('confirmed', 'Kirim ulang konfirmasi') + btn('rain', '🌧 Reschedule (hujan)', 'blue') + btn('cancel', 'Batalkan', 'ghost danger');
+    case 'reschedule': return `<span class="muted small">Menunggu tamu memilih jadwal baru.</span>` + wa('rain', 'Kirim ulang link reschedule', 'wa');
+    case 'resched_pending': return btn('resched_ok', '✓ OK, Reschedule', 'primary') + btn('resched_reject', 'Tolak (minta pilih lagi)', 'ghost danger');
+    case 'rescheduled': return `<span class="muted small">Dipindah ke <code>${esc(b.rescheduled_to || '')}</code></span>`;
+    case 'cancelled': return btn('reactivate', 'Aktifkan lagi');
+  }
+  return '';
+}
+
+function renderOrders() {
+  const q = $('#search').value.trim().toLowerCase();
+  let list = data.bookings.filter(matches);
+  if (['action', 'upcoming', 'resched'].includes(filter)) list = list.slice().sort((a, b) => (a.date + hm(a.start)).localeCompare(b.date + hm(b.start)));
+  if (q) list = list.filter(b => [b.name, b.phone, '0' + b.phone.slice(2), b.code, b.reschedule_of].join(' ').toLowerCase().includes(q));
+  if (!list.length) { $('#orders').innerHTML = '<p class="empty muted">Tidak ada pesanan.</p>'; return; }
+  $('#orders').innerHTML = list.map(b => `
+    <article class="order ${b.status}">
+      <div class="o-main">
+        <div class="o-top"><b>${esc(b.name)}</b> <span class="badge ${b.status}">${STATUS[b.status] || b.status}</span> <code>${b.code}</code>${b.source === 'admin' ? ' <span class="muted small">· manual</span>' : ''}</div>
+        <div class="o-when">${b.date_label} · <b>Court ${b.court}</b> · ${b.time_label} <span class="muted">(${b.duration_label})</span></div>
+        ${b.reschedule_of ? `<div class="small resched-note">🌧 Reschedule dari <code>${esc(b.reschedule_of)}</code> — sudah dibayar</div>` : ''}
+        <div class="muted small">${b.phone ? `<a href="${b.wa.chat}" target="_blank" rel="noopener">0${esc(b.phone.slice(2))}</a> · ` : ''}dipesan ${new Date(b.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}</div>
+      </div>
+      <div class="o-total">${rp(b.total)}</div>
+      <div class="o-actions">${actions(b)}</div>
+    </article>`).join('');
+}
+
+const CONFIRM = {
+  confirm: b => `Bukti transfer ${b.name} (${rp(b.total)}) sudah diterima?\n\nBooking ditandai LUNAS dan WhatsApp konfirmasi ke tamu akan dibuka.`,
+  cancel: b => `Batalkan booking ${b.name}?\nSlot akan kembali tersedia. (Catatan: kebijakan tidak ada refund.)`,
+  rain: b => `Hujan / lapangan basah untuk booking ${b.name} (${b.date_label}, ${b.time_label})?\n\nSlot lama dilepas dan WhatsApp berisi link reschedule ke tamu akan dibuka. Harga tetap sama.`,
+  resched_ok: b => `Setujui jadwal baru ${b.name}: ${b.date_label}, Court ${b.court}, ${b.time_label}?\n\nWhatsApp konfirmasi ke tamu akan dibuka.`,
+  resched_reject: b => `Tolak jadwal baru ${b.name}?\nTamu akan diminta memilih jadwal lain (link reschedule dikirim lagi).`,
+};
+
+$('#orders').onclick = async e => {
+  const btn = e.target.closest('button[data-op]');
+  if (!btn) return;
+  const op = btn.dataset.op, b = data.bookings.find(x => x.code === btn.dataset.code);
+  if (CONFIRM[op] && !confirm(CONFIRM[op](b))) return;
+  const win = op !== 'reactivate' && b.phone ? window.open('', '_blank') : null; // dibuka saat klik supaya tidak diblokir
+  try {
+    const r = await api('admin_action', { code: b.code, op });
+    if (win) { if (r.wa) win.location = r.wa; else win.close(); }
+    await load();
+  } catch (ex) { if (win) win.close(); alert(ex.message); }
+};
+
+/* ---------- jadwal (per 30 menit) ---------- */
+function renderGrid() {
+  const d = data.day;
+  $('#schedNote').innerHTML = d.label + ' · ' + (d.holiday ? '🔴 ' + esc(d.holiday) : d.weekend ? 'Harga weekend' : 'Harga weekday');
+  const byKey = {};
+  data.bookings.filter(b => b.date === d.date && BLOCKING.includes(b.status))
+    .forEach(b => { for (let m = b.start; m < b.start + b.minutes; m += data.step) byKey[b.court + '-' + m] = b; });
+  let html = '<div class="g-head"></div><div class="g-head">Court 1</div><div class="g-head">Court 2</div>';
+  d.units.forEach(u => {
+    html += `<div class="g-time${u.m % 60 ? ' half' : ''}">${u.label}</div>`;
+    [1, 2].forEach(c => {
+      const b = byKey[c + '-' + u.m];
+      if (b) {
+        const first = b.start === u.m;
+        html += `<div class="g-cell ${b.status}${first ? '' : ' cont'}" title="${esc(b.code)}">${first
+          ? `<b>${esc(b.name)}</b><small>${b.time_label} · ${STATUS[b.status]}</small>` : ''}</div>`;
+      } else if (u.courts[c] === 'past') html += '<div class="g-cell past"></div>';
+      else html += `<button class="g-cell free" data-court="${c}" data-m="${u.m}">+ kosong</button>`;
+    });
+  });
+  $('#grid').innerHTML = html;
+}
+
+function shiftDate(n) {
+  const [y, m, d] = schedDate.split('-').map(Number), x = new Date(y, m - 1, d + n);
+  schedDate = x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0');
+  $('#schedDate').value = schedDate; load();
+}
+$('#prevDay').onclick = () => shiftDate(-1);
+$('#nextDay').onclick = () => shiftDate(1);
+$('#todayBtn').onclick = () => { schedDate = data.today; $('#schedDate').value = schedDate; load(); };
+$('#schedDate').onchange = e => { if (e.target.value) { schedDate = e.target.value; load(); } };
+
+let manualSlot = null;
+$('#grid').onclick = e => {
+  const c = e.target.closest('button.g-cell');
+  if (!c) return;
+  manualSlot = { court: +c.dataset.court, start: +c.dataset.m };
+  let free = 0; // menit kosong berurutan mulai dari slot yang diklik
+  for (const u of data.day.units.filter(u => u.m >= manualSlot.start)) {
+    if (u.courts[manualSlot.court] !== 'free') break;
+    free += data.step;
+  }
+  if (free < data.minDuration) { alert('Slot kosong di sini kurang dari 1 jam. Minimal booking 1 jam.'); return; }
+  const f = $('#manualForm'), opts = [];
+  for (let m = data.minDuration; m <= Math.min(free, data.maxDuration); m += data.step) opts.push(m);
+  f.dur.innerHTML = opts.map(m => `<option value="${m}">${durLabel(m)} (${hm(manualSlot.start)}–${hm(manualSlot.start + m)})</option>`).join('');
+  f.name.value = ''; f.phone.value = ''; $('#manualErr').textContent = '';
+  $('#manualInfo').textContent = `${data.day.label} · Court ${manualSlot.court} · mulai ${hm(manualSlot.start)}`;
+  $('#manual').showModal();
+};
+$('#manualForm').onsubmit = async e => {
+  if (e.submitter && e.submitter.value === 'cancel') return;
+  e.preventDefault();
+  const f = e.target;
+  try {
+    await api('manual_book', { date: data.day.date, court: manualSlot.court, start: manualSlot.start, minutes: +f.dur.value, name: f.name.value, phone: f.phone.value });
+    $('#manual').close(); load();
+  } catch (ex) { $('#manualErr').textContent = ex.message; }
+};
+
+/* ---------- pengaturan ---------- */
+let holidays = [];
+async function loadSettings() {
+  const s = await api('admin_settings');
+  const f = $('#settingsForm');
+  f.bank.value = s.bank; f.admin_wa.value = '0' + s.admin_wa.slice(2);
+  for (const k in s.prices) f[k].value = s.prices[k];
+  holidays = s.holidays; renderHolidays();
+}
+function renderHolidays() {
+  $('#holidays').innerHTML = holidays.length ? holidays.map((h, i) =>
+    `<div class="hol"><span>${h.date}</span><span>${esc(h.name)}</span><button type="button" data-i="${i}">✕</button></div>`).join('')
+    : '<p class="muted small">Belum ada.</p>';
+}
+$('#holidays').onclick = e => { const b = e.target.closest('button'); if (b) { holidays.splice(+b.dataset.i, 1); renderHolidays(); } };
+$('#holAdd').onclick = () => {
+  const d = $('#holDate').value; if (!d) return;
+  holidays = holidays.filter(h => h.date !== d).concat({ date: d, name: $('#holName').value || 'Tanggal merah' }).sort((a, b) => a.date.localeCompare(b.date));
+  $('#holDate').value = ''; $('#holName').value = ''; renderHolidays();
+};
+$('#settingsForm').onsubmit = async e => {
+  e.preventDefault();
+  const f = e.target, m = $('#settingsMsg');
+  const prices = {}; ['weekday_day', 'weekday_night', 'weekend_day', 'weekend_night'].forEach(k => prices[k] = +f[k].value);
+  try {
+    await api('save_settings', { bank: f.bank.value, admin_wa: f.admin_wa.value, prices, holidays });
+    m.style.color = 'var(--green2)'; m.textContent = 'Tersimpan ✓'; load();
+  } catch (ex) { m.style.color = ''; m.textContent = ex.message; }
+};
+
+/* ---------- navigasi ---------- */
+$('#nav').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#nav button').forEach(x => x.classList.toggle('active', x === b));
+  document.querySelectorAll('.tab').forEach(t => t.hidden = t.id !== 'tab-' + b.dataset.tab);
+  if (b.dataset.tab === 'settings') loadSettings();
+};
+$('#filter').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  filter = b.dataset.f;
+  document.querySelectorAll('#filter button').forEach(x => x.classList.toggle('active', x === b));
+  renderOrders();
+};
+$('#search').oninput = renderOrders;
+
+function beep() {
+  try { const a = new AudioContext(), o = a.createOscillator(); o.connect(a.destination); o.frequency.value = 880; o.start(); o.stop(a.currentTime + .25); } catch (e) {}
+}
+
+load();
+setInterval(() => { if (!document.querySelector('dialog[open]')) load(); }, 30000);
+
+</script>
+</body>
+</html>
